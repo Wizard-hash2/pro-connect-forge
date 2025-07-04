@@ -42,10 +42,9 @@ const freelancerItems = [
 
 interface AppSidebarProps {
   userType: "client" | "freelancer";
-  onUserTypeChange: (type: "client" | "freelancer") => void;
 }
 
-export function AppSidebar({ userType, onUserTypeChange }: AppSidebarProps) {
+export function AppSidebar({ userType }: AppSidebarProps) {
   const { state } = useSidebar();
   const location = useLocation();
   const currentPath = location.pathname;
@@ -73,35 +72,6 @@ export function AppSidebar({ userType, onUserTypeChange }: AppSidebarProps) {
       <SidebarTrigger className="m-2 self-end hover:bg-accent transition-smooth" />
 
       <SidebarContent>
-        {/* User Type Switcher */}
-        <div className="p-4 border-b border-border/50">
-          <div className="flex flex-col gap-2">
-            <p className="text-sm font-medium text-muted-foreground">Switch Mode</p>
-            <div className="flex gap-1 p-1 bg-muted rounded-lg">
-              <button
-                onClick={() => onUserTypeChange("client")}
-                className={`flex-1 px-3 py-2 text-sm rounded-md transition-smooth ${
-                  userType === "client" 
-                    ? "bg-primary text-primary-foreground shadow-soft" 
-                    : "hover:bg-accent"
-                }`}
-              >
-                Client
-              </button>
-              <button
-                onClick={() => onUserTypeChange("freelancer")}
-                className={`flex-1 px-3 py-2 text-sm rounded-md transition-smooth ${
-                  userType === "freelancer" 
-                    ? "bg-primary text-primary-foreground shadow-soft" 
-                    : "hover:bg-accent"
-                }`}
-              >
-                Freelancer
-              </button>
-            </div>
-          </div>
-        </div>
-
         <SidebarGroup>
           <SidebarGroupLabel className="text-primary font-medium">
             {userType === "client" ? "Client Tools" : "Freelancer Tools"}
@@ -115,7 +85,7 @@ export function AppSidebar({ userType, onUserTypeChange }: AppSidebarProps) {
                     <NavLink 
                       to={item.url} 
                       end 
-                      className={getNavCls}
+                      className={`${getNavCls} text-blue-600`}
                     >
                       <item.icon className="mr-2 h-4 w-4" />
                       <span>{item.title}</span>
@@ -138,7 +108,7 @@ export function AppSidebar({ userType, onUserTypeChange }: AppSidebarProps) {
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <NavLink to="/settings" className={getNavCls}>
+                  <NavLink to="/settings" className={`${getNavCls} text-blue-600`}>
                     <Settings className="mr-2 h-4 w-4" />
                     <span>Settings</span>
                   </NavLink>

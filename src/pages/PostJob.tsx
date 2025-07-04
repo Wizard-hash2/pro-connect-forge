@@ -25,6 +25,8 @@ import {
   Users,
   CheckCircle
 } from "lucide-react";
+import { useUserProfile } from '@/context/UserProfileContext';
+import { createJobPost } from '@/services/jobPostsService';
 
 interface JobFormData {
   title: string;
@@ -59,6 +61,10 @@ export default function PostJob() {
     experience: "",
     teamSize: "1"
   });
+  const { profile } = useUserProfile();
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
 
   const totalSteps = 4;
   const progress = (currentStep / totalSteps) * 100;
@@ -97,6 +103,44 @@ export default function PostJob() {
   const prevStep = () => {
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1);
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!profile) {
+      setSubmitError('You must be logged in to post a job.');
+      return;
+    }
+    setSubmitting(true);
+    setSubmitError(null);
+    setSubmitSuccess(false);
+    const { data, error } = await createJobPost({
+      client_id: profile.id,
+      title: formData.title,
+      description: formData.description,
+      budget_min: formData.budgetMin,
+      budget_max: formData.budgetMax,
+      required_experience_level: formData.experience as any,
+      status: 'open',
+      deadline: null, // You can add a deadline field to the form if needed
+    });
+    setSubmitting(false);
+    if (error) {
+      setSubmitError(error);
+    } else {
+      setSubmitSuccess(true);
+      setFormData({
+        title: "",
+        description: "",
+        skills: [],
+        budgetType: "hourly",
+        budgetMin: 25,
+        budgetMax: 100,
+        duration: "",
+        experience: "",
+        teamSize: "1"
+      });
+      setCurrentStep(1);
     }
   };
 
@@ -325,13 +369,14 @@ export default function PostJob() {
 
               <div>
                 <Label htmlFor="experience">Experience Level</Label>
-                <Select onValueChange={(value) => setFormData(prev => ({ ...prev, experience: value }))}>
-                  <SelectTrigger className="mt-2">
+                <Select value={formData.experience} onValueChange={val => setFormData(prev => ({ ...prev, experience: val }))}>
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select experience level" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="entry">Entry Level</SelectItem>
-                    <SelectItem value="intermediate">Intermediate</SelectItem>
+                    <SelectItem value="junior">Junior</SelectItem>
+                    <SelectItem value="mid">Mid</SelectItem>
+                    <SelectItem value="senior">Senior</SelectItem>
                     <SelectItem value="expert">Expert</SelectItem>
                   </SelectContent>
                 </Select>
@@ -424,7 +469,7 @@ export default function PostJob() {
             </Button>
 
             {currentStep === totalSteps ? (
-              <Button className="bg-gradient-primary hover:opacity-90">
+              <Button onClick={handleSubmit} disabled={submitting}>
                 <CheckCircle className="mr-2 h-4 w-4" />
                 Post Job
               </Button>
@@ -435,6 +480,9 @@ export default function PostJob() {
               </Button>
             )}
           </div>
+
+          {submitError && <div className="text-red-500 mt-2">{submitError}</div>}
+          {submitSuccess && <div className="text-green-600 mt-2">Job posted successfully!</div>}
         </CardContent>
       </Card>
     </div>

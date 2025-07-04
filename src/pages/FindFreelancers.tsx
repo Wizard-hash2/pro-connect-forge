@@ -25,92 +25,32 @@ import {
   Award,
   TrendingUp
 } from "lucide-react";
-
-interface Freelancer {
-  id: string;
-  name: string;
-  avatar: string;
-  title: string;
-  location: string;
-  rating: number;
-  reviewCount: number;
-  hourlyRate: string;
-  skills: string[];
-  description: string;
-  availability: string;
-  completedJobs: number;
-  responseTime: string;
-  compatibility: number;
-  badges: string[];
-}
-
-const freelancers: Freelancer[] = [
-  {
-    id: "1",
-    name: "Sarah Chen",
-    avatar: "/avatars/sarah.jpg",
-    title: "Senior React Developer & UI/UX Designer",
-    location: "San Francisco, CA",
-    rating: 4.9,
-    reviewCount: 127,
-    hourlyRate: "$85",
-    skills: ["React", "TypeScript", "Node.js", "Figma", "UI/UX"],
-    description: "Experienced full-stack developer with 5+ years specializing in React ecosystems and modern web applications.",
-    availability: "Available now",
-    completedJobs: 89,
-    responseTime: "1 hour",
-    compatibility: 95,
-    badges: ["Top Rated", "Rising Talent"]
-  },
-  {
-    id: "2", 
-    name: "Marcus Rodriguez",
-    avatar: "/avatars/marcus.jpg",
-    title: "Mobile App Developer & Designer",
-    location: "Austin, TX",
-    rating: 4.8,
-    reviewCount: 94,
-    hourlyRate: "$70",
-    skills: ["React Native", "Flutter", "iOS", "Android", "Design"],
-    description: "Mobile-first developer creating beautiful, performant apps for startups and enterprises.",
-    availability: "Available in 2 days",
-    completedJobs: 67,
-    responseTime: "30 minutes",
-    compatibility: 88,
-    badges: ["Top Rated"]
-  },
-  {
-    id: "3",
-    name: "Elena Popov",
-    avatar: "/avatars/elena.jpg", 
-    title: "Full-Stack Python Developer",
-    location: "Remote (EU)",
-    rating: 4.9,
-    reviewCount: 156,
-    hourlyRate: "$75",
-    skills: ["Python", "Django", "PostgreSQL", "AWS", "Docker"],
-    description: "Backend specialist with expertise in scalable web applications and cloud infrastructure.",
-    availability: "Available now",
-    completedJobs: 134,
-    responseTime: "2 hours",
-    compatibility: 82,
-    badges: ["Top Rated", "Expert Vetted"]
-  }
-];
+import { useFreelancerProfiles } from '@/hooks/useFreelancerProfiles';
 
 export default function FindFreelancers() {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("best-match");
   const [filterSkill, setFilterSkill] = useState("");
+  const { data: freelancers, loading, error } = useFreelancerProfiles();
 
-  const filteredFreelancers = freelancers.filter(freelancer => {
-    const matchesSearch = freelancer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         freelancer.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         freelancer.skills.some(skill => skill.toLowerCase().includes(searchQuery.toLowerCase()));
-    
-    const matchesSkill = !filterSkill || freelancer.skills.includes(filterSkill);
-    
+  const filteredFreelancers = (freelancers || []).filter(freelancer => {
+    const matchesSearch = (freelancer.bio?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false)
+      || (freelancer.experience_level?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false);
+    const matchesSkill = !filterSkill || (freelancer.bio?.toLowerCase().includes(filterSkill.toLowerCase()) ?? false);
     return matchesSearch && matchesSkill;
+  });
+
+  const sortedFreelancers = [...filteredFreelancers].sort((a, b) => {
+    if (sortBy === 'rating') {
+      return (b.rating ?? 0) - (a.rating ?? 0);
+    }
+    if (sortBy === 'rate-low') {
+      return (a.hourly_rate ?? 0) - (b.hourly_rate ?? 0);
+    }
+    if (sortBy === 'rate-high') {
+      return (b.hourly_rate ?? 0) - (a.hourly_rate ?? 0);
+    }
+    return 0;
   });
 
   return (
@@ -174,128 +114,57 @@ export default function FindFreelancers() {
       {/* Results Count */}
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
-          {filteredFreelancers.length} freelancers found
+          {loading ? 'Loading...' : error ? `Error: ${error}` : `${sortedFreelancers.length} freelancers found`}
         </p>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Users className="h-4 w-4" />
-          <span>3,247 active this week</span>
+          <span>{freelancers ? freelancers.length : 0} active this week</span>
         </div>
       </div>
 
       {/* Freelancer Cards */}
       <div className="grid gap-6">
-        {filteredFreelancers.map((freelancer) => (
-          <Card key={freelancer.id} className="shadow-medium hover:shadow-large transition-smooth group">
-            <CardContent className="p-6">
-              <div className="flex flex-col lg:flex-row gap-6">
-                {/* Profile Section */}
-                <div className="flex items-start gap-4">
-                  <Avatar className="h-16 w-16">
-                    <AvatarImage src={freelancer.avatar} alt={freelancer.name} />
-                    <AvatarFallback className="bg-gradient-primary text-primary-foreground">
-                      {freelancer.name.split(" ").map(n => n[0]).join("")}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <h3 className="font-semibold text-lg group-hover:text-primary transition-smooth">
-                          {freelancer.name}
-                        </h3>
-                        <p className="text-muted-foreground">{freelancer.title}</p>
+        {loading ? (
+          <div>Loading freelancers...</div>
+        ) : error ? (
+          <div className="text-red-500">Error: {error}</div>
+        ) : sortedFreelancers.length === 0 ? (
+          <div className="text-muted-foreground">No freelancers found.</div>
+        ) : (
+          sortedFreelancers.map((freelancer) => (
+            <Card key={freelancer.id} className="shadow-medium hover:shadow-large transition-smooth group">
+              <CardContent className="p-6">
+                <div className="flex flex-col lg:flex-row gap-6">
+                  {/* Profile Section */}
+                  <div className="flex items-start gap-4">
+                    <Avatar className="h-16 w-16">
+                      <AvatarFallback className="bg-gradient-primary text-primary-foreground">
+                        {freelancer.bio?.slice(0, 2).toUpperCase() || 'FR'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <h2 className="text-lg font-bold">{freelancer.bio || 'Freelancer'}</h2>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <Star className="h-4 w-4 text-yellow-400" />
+                            {freelancer.rating ?? '—'}
+                          </div>
+                        </div>
+                        <div className="text-primary font-semibold text-lg">
+                          ${freelancer.hourly_rate ?? '—'}/hr
+                        </div>
                       </div>
-                      <Button variant="ghost" size="icon" className="opacity-0 group-hover:opacity-100 transition-smooth">
-                        <Heart className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    
-                    {/* Badges */}
-                    <div className="flex flex-wrap gap-1 mt-2">
-                      {freelancer.badges.map((badge) => (
-                        <Badge key={badge} variant="secondary" className="text-xs bg-primary/10 text-primary">
-                          <Award className="h-3 w-3 mr-1" />
-                          {badge}
-                        </Badge>
-                      ))}
-                    </div>
-
-                    {/* Location and Rating */}
-                    <div className="flex items-center gap-4 mt-3 text-sm text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <MapPin className="h-3 w-3" />
-                        {freelancer.location}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Star className="h-3 w-3 fill-current text-warning" />
-                        {freelancer.rating} ({freelancer.reviewCount} reviews)
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        Responds in {freelancer.responseTime}
-                      </span>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        {freelancer.experience_level || '—'}
+                      </div>
                     </div>
                   </div>
                 </div>
-
-                {/* Content Section */}
-                <div className="flex-1 lg:border-l lg:pl-6">
-                  <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                    {freelancer.description}
-                  </p>
-
-                  {/* Skills */}
-                  <div className="flex flex-wrap gap-1 mb-4">
-                    {freelancer.skills.map((skill) => (
-                      <Badge key={skill} variant="outline" className="text-xs">
-                        {skill}
-                      </Badge>
-                    ))}
-                  </div>
-
-                  {/* Stats */}
-                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-                    <div className="text-center p-2 bg-accent/50 rounded-lg">
-                      <div className="font-semibold text-primary">{freelancer.completedJobs}</div>
-                      <div className="text-xs text-muted-foreground">Jobs completed</div>
-                    </div>
-                    <div className="text-center p-2 bg-accent/50 rounded-lg">
-                      <div className="font-semibold text-primary">{freelancer.compatibility}%</div>
-                      <div className="text-xs text-muted-foreground">Match score</div>
-                    </div>
-                    <div className="text-center p-2 bg-accent/50 rounded-lg">
-                      <div className="font-semibold text-primary">{freelancer.hourlyRate}/hr</div>
-                      <div className="text-xs text-muted-foreground">Hourly rate</div>
-                    </div>
-                    <div className="text-center p-2 bg-accent/50 rounded-lg">
-                      <div className="font-semibold text-primary">{freelancer.availability}</div>
-                      <div className="text-xs text-muted-foreground">Availability</div>
-                    </div>
-                  </div>
-
-                  {/* Compatibility Bar */}
-                  <div className="mb-4">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-sm font-medium">Compatibility Score</span>
-                      <span className="text-sm text-primary font-medium">{freelancer.compatibility}%</span>
-                    </div>
-                    <Progress value={freelancer.compatibility} className="h-2" />
-                  </div>
-                </div>
-
-                {/* Action Section */}
-                <div className="flex flex-col gap-2 lg:w-32">
-                  <Button className="w-full bg-gradient-primary hover:opacity-90">
-                    <MessageCircle className="mr-2 h-4 w-4" />
-                    Contact
-                  </Button>
-                  <Button variant="outline" className="w-full">
-                    View Profile
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+              </CardContent>
+            </Card>
+          ))
+        )}
       </div>
 
       {/* Load More */}

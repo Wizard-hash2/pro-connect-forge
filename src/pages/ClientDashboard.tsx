@@ -11,9 +11,14 @@ import {
   TrendingUp,
   Clock,
   Star,
-  ArrowRight
+  ArrowRight,
+  User
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useUserProfile } from '@/context/UserProfileContext';
+import { useJobPosts } from '@/hooks/useJobPosts';
+import { useFreelancerProfiles } from '@/hooks/useFreelancerProfiles';
+import { useApplications } from '@/hooks/useApplications';
 
 interface JobCard {
   id: string;
@@ -78,13 +83,39 @@ const topMatches: MatchCard[] = [
 ];
 
 export default function ClientDashboard() {
+  const { profile, loading, error } = useUserProfile();
+  const { data: jobs, loading: jobsLoading, error: jobsError } = useJobPosts();
+  const { data: freelancers, loading: freelancersLoading, error: freelancersError } = useFreelancerProfiles();
+  const { data: applications, loading: applicationsLoading, error: applicationsError } = useApplications();
+
+  if (loading || jobsLoading || freelancersLoading || applicationsLoading) return <div>Loading dashboard...</div>;
+  if (error) return <div className="text-red-500">Error: {error}</div>;
+  if (jobsError) return <div className="text-red-500">Error loading jobs: {jobsError}</div>;
+  if (freelancersError) return <div className="text-red-500">Error loading freelancers: {freelancersError}</div>;
+  if (applicationsError) return <div className="text-red-500">Error loading applications: {applicationsError}</div>;
+  if (!profile) return <div>Please log in.</div>;
+
+  // Filter jobs for this client
+  const clientJobs = jobs?.filter(job => job.client_id === profile.id) || [];
+  // Applications for this client's jobs
+  const clientJobIds = clientJobs.map(job => job.id);
+  const clientApplications = (applications || []).filter(app => clientJobIds.includes(app.job_id));
+  // Budget spent: sum of budget_max for completed jobs
+  const budgetSpent = clientJobs.filter(job => job.status === 'completed').reduce((sum, job) => sum + (job.budget_max || 0), 0);
+  // Avg. rating: average rating from completed jobs (if available)
+  // For now, use profile.rating or '—'
+  const avgRating = profile.rating ?? '—';
+
+  // For top matches, just show the first few freelancers for now
+  const topMatches = freelancers?.slice(0, 2) || [];
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Welcome Section */}
       <div className="bg-gradient-primary p-6 rounded-xl text-primary-foreground shadow-large">
         <div className="flex justify-between items-start">
           <div>
-            <h1 className="text-2xl font-bold mb-2">Welcome back, John!</h1>
+            <h1 className="text-2xl font-bold mb-2">Welcome back, {profile.full_name}!</h1>
             <p className="text-primary-foreground/80 mb-4">
               Ready to find your next amazing freelancer?
             </p>
@@ -94,7 +125,7 @@ export default function ClientDashboard() {
             </Button>
           </div>
           <div className="text-right">
-            <div className="text-3xl font-bold">4.8</div>
+            <div className="text-3xl font-bold">{profile.rating ?? '—'}</div>
             <div className="text-sm text-primary-foreground/80">Client Rating</div>
           </div>
         </div>
@@ -108,9 +139,10 @@ export default function ClientDashboard() {
             <Briefcase className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-primary">2</div>
+            <div className="text-2xl font-bold text-primary">{clientJobs.length}</div>
             <p className="text-xs text-muted-foreground">
               <TrendingUp className="inline h-3 w-3 mr-1" />
+              {/* Placeholder for stats */}
               +20% from last month
             </p>
           </CardContent>
@@ -122,9 +154,10 @@ export default function ClientDashboard() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-primary">20</div>
+            <div className="text-2xl font-bold text-primary">{clientApplications.length}</div>
             <p className="text-xs text-muted-foreground">
               <TrendingUp className="inline h-3 w-3 mr-1" />
+              {/* Placeholder for stats */}
               +12% from last week
             </p>
           </CardContent>
@@ -136,9 +169,10 @@ export default function ClientDashboard() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-primary">$12,450</div>
+            <div className="text-2xl font-bold text-primary">${budgetSpent}</div>
             <p className="text-xs text-muted-foreground">
               <TrendingUp className="inline h-3 w-3 mr-1" />
+              {/* Placeholder for stats */}
               +8% from last month
             </p>
           </CardContent>
@@ -150,9 +184,10 @@ export default function ClientDashboard() {
             <Star className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-primary">4.8</div>
+            <div className="text-2xl font-bold text-primary">{avgRating}</div>
             <p className="text-xs text-muted-foreground">
-              From 15 completed projects
+              {/* Placeholder for completed projects count */}
+              From {clientJobs.filter(job => job.status === 'completed').length} completed projects
             </p>
           </CardContent>
         </Card>
@@ -172,37 +207,38 @@ export default function ClientDashboard() {
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            {activeJobs.map((job) => (
-              <div key={job.id} className="p-4 border border-border/50 rounded-lg hover:bg-accent/50 transition-smooth">
-                <div className="flex justify-between items-start mb-2">
-                  <h3 className="font-medium text-sm">{job.title}</h3>
-                  <Badge 
-                    variant={job.status === "active" ? "default" : job.status === "in_progress" ? "secondary" : "outline"}
-                    className="capitalize"
-                  >
-                    {job.status.replace("_", " ")}
-                  </Badge>
+            {clientJobs.length === 0 ? (
+              <div className="text-muted-foreground">No active jobs found.</div>
+            ) : (
+              clientJobs.map((job) => (
+                <div key={job.id} className="p-4 border border-border/50 rounded-lg hover:bg-accent/50 transition-smooth">
+                  <div className="flex justify-between items-start mb-2">
+                    <h3 className="font-medium text-sm">{job.title}</h3>
+                    <Badge 
+                      variant={job.status === "open" ? "default" : job.status === "in_progress" ? "secondary" : "outline"}
+                      className="capitalize"
+                    >
+                      {job.status?.replace("_", " ")}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                    {/* Applications count and budget info can be added if available */}
+                    <span className="flex items-center gap-1">
+                      <DollarSign className="h-3 w-3" />
+                      {job.budget_min && job.budget_max ? `$${job.budget_min} - $${job.budget_max}` : '—'}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      {job.deadline ? new Date(job.deadline).toLocaleDateString() : 'No deadline'}
+                    </span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                  <span className="flex items-center gap-1">
-                    <Users className="h-3 w-3" />
-                    {job.applications} applications
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <DollarSign className="h-3 w-3" />
-                    {job.budget}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Clock className="h-3 w-3" />
-                    Due {job.deadline}
-                  </span>
-                </div>
-              </div>
-            ))}
+              ))
+            )}
           </CardContent>
         </Card>
 
-        {/* Top Matches */}
+        {/* Top Matches (Freelancers) */}
         <Card className="shadow-medium">
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -215,40 +251,22 @@ export default function ClientDashboard() {
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            {topMatches.map((match) => (
-              <div key={match.id} className="p-4 border border-border/50 rounded-lg hover:bg-accent/50 transition-smooth">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gradient-primary rounded-full flex items-center justify-center text-primary-foreground font-medium">
-                      {match.name.split(" ").map(n => n[0]).join("")}
-                    </div>
-                    <div>
-                      <h3 className="font-medium text-sm">{match.name}</h3>
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <Star className="h-3 w-3 fill-current text-warning" />
-                        {match.rating} • {match.hourlyRate}
-                      </div>
-                    </div>
+            {topMatches.length === 0 ? (
+              <div className="text-muted-foreground">No matches found.</div>
+            ) : (
+              topMatches.map((freelancer) => (
+                <div key={freelancer.id} className="p-4 border border-border/50 rounded-lg hover:bg-accent/50 transition-smooth flex items-center gap-4">
+                  <div className="flex-shrink-0 w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+                    {/* Avatar placeholder, can use freelancer.avatar_url if available */}
+                    <User className="h-6 w-6 text-muted-foreground" />
                   </div>
-                  <Badge variant="secondary" className="bg-success/10 text-success">
-                    {match.compatibility}% match
-                  </Badge>
+                  <div>
+                    <div className="font-medium text-sm">{freelancer.bio || 'Freelancer'}</div>
+                    <div className="text-xs text-muted-foreground">{freelancer.experience_level || '—'} | ${freelancer.hourly_rate ?? '—'}/hr</div>
+                  </div>
                 </div>
-                
-                <div className="flex flex-wrap gap-1 mb-2">
-                  {match.skills.slice(0, 3).map((skill) => (
-                    <Badge key={skill} variant="outline" className="text-xs">
-                      {skill}
-                    </Badge>
-                  ))}
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">{match.availability}</span>
-                  <Progress value={match.compatibility} className="w-16 h-1" />
-                </div>
-              </div>
-            ))}
+              ))
+            )}
           </CardContent>
         </Card>
       </div>
