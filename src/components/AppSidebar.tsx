@@ -67,7 +67,7 @@ export function AppSidebar({ userType, onUserTypeChange }: AppSidebarProps) {
 
   return (
     <Sidebar
-      className={`${collapsed ? "w-14" : "w-64"} transition-all duration-300 bg-gradient-secondary border-r border-border/50`}
+      className="w-64 transition-all duration-300 bg-gradient-secondary border-r border-border/50"
       collapsible="icon"
     >
       <SidebarTrigger className="m-2 self-end hover:bg-accent transition-smooth" />
@@ -120,15 +120,11 @@ export function AppSidebar({ userType, onUserTypeChange }: AppSidebarProps) {
                       className={getNavCls}
                     >
                       <item.icon className="mr-2 h-4 w-4" />
-                      {!collapsed && (
-                        <>
-                          <span>{item.title}</span>
-                          {item.badge && (
-                            <Badge variant="secondary" className="ml-auto bg-primary text-primary-foreground">
-                              {item.badge}
-                            </Badge>
-                          )}
-                        </>
+                      <span>{item.title}</span>
+                      {item.badge && (
+                        <Badge variant="secondary" className="ml-auto bg-primary text-primary-foreground">
+                          {item.badge}
+                        </Badge>
                       )}
                     </NavLink>
                   </SidebarMenuButton>
@@ -146,7 +142,7 @@ export function AppSidebar({ userType, onUserTypeChange }: AppSidebarProps) {
                 <SidebarMenuButton asChild>
                   <NavLink to="/settings" className={getNavCls}>
                     <Settings className="mr-2 h-4 w-4" />
-                    {!collapsed && <span>Settings</span>}
+                    <span>Settings</span>
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
