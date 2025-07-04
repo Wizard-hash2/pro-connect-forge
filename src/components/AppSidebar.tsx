@@ -74,35 +74,33 @@ export function AppSidebar({ userType, onUserTypeChange }: AppSidebarProps) {
 
       <SidebarContent>
         {/* User Type Switcher */}
-        {!collapsed && (
-          <div className="p-4 border-b border-border/50">
-            <div className="flex flex-col gap-2">
-              <p className="text-sm font-medium text-muted-foreground">Switch Mode</p>
-              <div className="flex gap-1 p-1 bg-muted rounded-lg">
-                <button
-                  onClick={() => onUserTypeChange("client")}
-                  className={`flex-1 px-3 py-2 text-sm rounded-md transition-smooth ${
-                    userType === "client" 
-                      ? "bg-primary text-primary-foreground shadow-soft" 
-                      : "hover:bg-accent"
-                  }`}
-                >
-                  Client
-                </button>
-                <button
-                  onClick={() => onUserTypeChange("freelancer")}
-                  className={`flex-1 px-3 py-2 text-sm rounded-md transition-smooth ${
-                    userType === "freelancer" 
-                      ? "bg-primary text-primary-foreground shadow-soft" 
-                      : "hover:bg-accent"
-                  }`}
-                >
-                  Freelancer
-                </button>
-              </div>
+        <div className="p-4 border-b border-border/50">
+          <div className="flex flex-col gap-2">
+            <p className="text-sm font-medium text-muted-foreground">Switch Mode</p>
+            <div className="flex gap-1 p-1 bg-muted rounded-lg">
+              <button
+                onClick={() => onUserTypeChange("client")}
+                className={`flex-1 px-3 py-2 text-sm rounded-md transition-smooth ${
+                  userType === "client" 
+                    ? "bg-primary text-primary-foreground shadow-soft" 
+                    : "hover:bg-accent"
+                }`}
+              >
+                Client
+              </button>
+              <button
+                onClick={() => onUserTypeChange("freelancer")}
+                className={`flex-1 px-3 py-2 text-sm rounded-md transition-smooth ${
+                  userType === "freelancer" 
+                    ? "bg-primary text-primary-foreground shadow-soft" 
+                    : "hover:bg-accent"
+                }`}
+              >
+                Freelancer
+              </button>
             </div>
           </div>
-        )}
+        </div>
 
         <SidebarGroup>
           <SidebarGroupLabel className="text-primary font-medium">
