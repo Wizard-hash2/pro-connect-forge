@@ -128,7 +128,7 @@ export default function FreelancerDashboard() {
             </Button>
           </div>
           <div className="text-right">
-            <div className="text-3xl font-bold">$2,450</div>
+            <div className="text-3xl font-bold">$__</div>
             <div className="text-sm text-primary-foreground/80">This Month</div>
           </div>
         </div>

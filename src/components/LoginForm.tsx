@@ -79,9 +79,29 @@ export function LoginForm() {
 
     setSuccess(true);
     setLoading(false);
-    // Redirect to home after a short delay
-    setTimeout(() => {
-      navigate('/');
+    // Redirect based on user type after a short delay
+    setTimeout(async () => {
+      // Fetch the user's profile to get user_type
+      const { data: { user } } = await supabase.auth.getUser();
+      let userType = 'client';
+      if (user) {
+        // Try to get user_type from user_metadata
+        userType = user.user_metadata?.user_type || 'client';
+        // If not in metadata, try to get from profiles table
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('user_type')
+          .eq('id', user.id)
+          .single();
+        if (profile && profile.user_type) {
+          userType = profile.user_type;
+        }
+      }
+      if (userType === 'freelancer') {
+        navigate('/freelancer');
+      } else {
+        navigate('/');
+      }
     }, 1000);
   };
 
