@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Profile } from '@/types/supabase';
+// Removed useNavigate import
 
 type UserProfileContextType = {
   profile: Profile | null;
@@ -24,6 +25,7 @@ export const UserProfileProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // Removed useNavigate
 
   const fetchProfile = async () => {
     setLoading(true);
@@ -47,6 +49,7 @@ export const UserProfileProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const logout = async () => {
     await supabase.auth.signOut();
     setProfile(null);
+    // Removed navigate('/auth')
   };
 
   useEffect(() => {

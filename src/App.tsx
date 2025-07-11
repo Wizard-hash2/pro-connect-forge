@@ -12,6 +12,13 @@ import NotFound from "./pages/NotFound";
 import SignUp from '@/pages/SignUp';
 import Auth from '@/pages/Auth';
 import { UserProfileProvider } from '@/context/UserProfileContext';
+import Messages from './pages/Messages';
+import Projects from './pages/Projects';
+import Profile from './pages/Profile';
+import Applications from './pages/Applications';
+import Settings from './pages/Settings';
+import BrowseJobs from './pages/BrowseJobs';
+import SearchPage from './pages/SearchPage';
 
 const queryClient = new QueryClient();
 
@@ -51,35 +58,36 @@ const App = () => (
             } />
             <Route path="/browse-jobs" element={
               <DashboardLayout>
-                <FreelancerDashboard />
+                <BrowseJobs />
               </DashboardLayout>
             } />
             <Route path="/profile" element={
               <DashboardLayout>
-                <FreelancerDashboard />
+                <Profile />
               </DashboardLayout>
             } />
             <Route path="/projects" element={
               <DashboardLayout>
-                <ClientDashboard />
+                <Projects />
               </DashboardLayout>
             } />
             <Route path="/applications" element={
               <DashboardLayout>
-                <FreelancerDashboard />
-              </DashboardLayout>
-            } />
-            <Route path="/messages" element={
-              <DashboardLayout>
-                <ClientDashboard />
+                <Applications />
               </DashboardLayout>
             } />
             <Route path="/settings" element={
               <DashboardLayout>
-                <ClientDashboard />
+                <Settings />
+              </DashboardLayout>
+            } />
+            <Route path="/messages" element={
+              <DashboardLayout>
+                <Messages />
               </DashboardLayout>
             } />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/search" element={<SearchPage />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

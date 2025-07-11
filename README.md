@@ -1,73 +1,92 @@
-# Welcome to your Lovable project
+# AFRIWORK
 
-## Project info
+🚀 **AFRIWORK** is a modern, full-stack freelancer marketplace platform built with React, TypeScript, and Supabase. It empowers clients to post projects, discover top freelancers, and manage collaborations—all in a beautiful, intuitive interface.
 
-**URL**: https://lovable.dev/projects/a6f9e670-34b7-4817-931b-23be311b2beb
+---
 
-## How can I edit this code?
+## 🌟 Project Overview
 
-There are several ways of editing your application.
+AFRIWORK bridges the gap between talented freelancers and clients seeking quality work. With real-time matching, secure authentication, and a seamless dashboard experience, it's the next-gen platform for remote work and digital collaboration.
 
-**Use Lovable**
+---
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/a6f9e670-34b7-4817-931b-23be311b2beb) and start prompting.
+## ✨ Key Features
 
-Changes made via Lovable will be committed automatically to this repo.
+- **Client & Freelancer Dashboards**: Personalized dashboards for both user types, with live stats and actionable insights.
+- **Project Posting**: Clients can easily post new jobs, set budgets, and specify required skills.
+- **Freelancer Discovery**: Advanced search and filtering to find the perfect freelancer for any project.
+- **One-Click Applications**: Freelancers can apply to jobs instantly, with applications tracked in real time.
+- **Secure Auth & Profiles**: Supabase-powered authentication and profile management.
+- **Live Data**: All dashboards and lists update with real data from Supabase—no more static content!
+- **Modern UI/UX**: Built with React, Tailwind CSS, and a suite of custom UI components for a delightful user experience.
 
-**Use your preferred IDE**
+---
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## 🛠️ Tech Stack
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+- **Frontend**: React, TypeScript, Vite, Tailwind CSS
+- **Backend**: Supabase (Postgres, Auth, RLS)
+- **State & Data**: React Context, Custom Hooks, Supabase Client
+- **UI Components**: Custom, accessible, and beautiful
 
-Follow these steps:
+---
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+## 🚀 Getting Started
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+1. **Clone the repo:**
+   ```bash
+   git clone https://github.com/Wizard-hash2/AI_Background_Bot.git
+   cd afriwork
+   ```
+2. **Install dependencies:**
+   ```bash
+   npm install
+   # or
+   yarn install
+   ```
+3. **Configure Supabase:**
+   - Copy `.env.example` to `.env` and add your Supabase credentials.
+   - Set up your Supabase project and run the provided SQL migrations for tables and RLS policies.
+4. **Run the app:**
+   ```bash
+   npm run dev
+   # or
+   yarn dev
+   ```
+5. **Open in your browser:**
+   - Visit [http://localhost:5173](http://localhost:5173) (or the port shown in your terminal)
 
-# Step 3: Install the necessary dependencies.
-npm i
+---
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+## 🧩 Project Structure
 
-**Edit a file directly in GitHub**
+- `src/pages/` — Main app pages (Dashboards, Find Freelancers, Post Job, etc.)
+- `src/components/` — Reusable UI components
+- `src/services/` — Supabase data services
+- `src/hooks/` — Custom React hooks for data fetching
+- `src/context/` — Global state and user profile context
+- `src/integrations/supabase/` — Supabase client and types
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+---
 
-**Use GitHub Codespaces**
+## 🤝 Contributing
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+We welcome contributions! Whether it's a bug fix, feature suggestion, or UI improvement, your input makes AFRIWORK better for everyone.
 
-## What technologies are used for this project?
+- Fork the repo
+- Create a feature branch
+- Submit a pull request
 
-This project is built with:
+Let's build the future of freelance work—together!
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+---
 
-## How can I deploy this project?
+## 📣 Contact & Community
 
-Simply open [Lovable](https://lovable.dev/projects/a6f9e670-34b7-4817-931b-23be311b2beb) and click on Share -> Publish.
+- [Issues & Discussions](https://github.com/Wizard-hash2/AI_Background_Bot.git::)
+- [Supabase Docs](https://supabase.com/docs)
+- [React Docs](https://react.dev/)
 
-## Can I connect a custom domain to my Lovable project?
+---
 
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+> **AFRIWORK** — Where talent meets opportunity. ✨

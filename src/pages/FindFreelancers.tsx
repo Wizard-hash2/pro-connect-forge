@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,27 +16,55 @@ import {
   Search, 
   Filter, 
   Star, 
-  MapPin, 
-  Clock, 
-  DollarSign,
-  MessageCircle,
-  Heart,
   Users,
-  Award,
   TrendingUp
 } from "lucide-react";
-import { useFreelancerProfiles } from '@/hooks/useFreelancerProfiles';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function FindFreelancers() {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("best-match");
-  const [filterSkill, setFilterSkill] = useState("");
-  const { data: freelancers, loading, error } = useFreelancerProfiles();
+  const [filterSkill, setFilterSkill] = useState("all");
+  const [freelancers, setFreelancers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [freelancerProjects, setFreelancerProjects] = useState<Record<string, any[]>>({});
+
+  useEffect(() => {
+    const fetchFreelancers = async () => {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_type', 'freelancer');
+      setFreelancers(data || []);
+      setError(error?.message || null);
+      setLoading(false);
+    };
+    fetchFreelancers();
+  }, []);
+
+  useEffect(() => {
+    const fetchProjects = async () => {
+      if (!freelancers) return;
+      const projectsMap: Record<string, any[]> = {};
+      for (const freelancer of freelancers) {
+        const { data } = await supabase
+          .from('projects')
+          .select('*')
+          .eq('profile_id', freelancer.id);
+        projectsMap[freelancer.id] = data || [];
+      }
+      setFreelancerProjects(projectsMap);
+    };
+    fetchProjects();
+  }, [freelancers]);
 
   const filteredFreelancers = (freelancers || []).filter(freelancer => {
-    const matchesSearch = (freelancer.bio?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false)
+    const matchesSearch = (freelancer.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false)
+      || (freelancer.bio?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false)
       || (freelancer.experience_level?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false);
-    const matchesSkill = !filterSkill || (freelancer.bio?.toLowerCase().includes(filterSkill.toLowerCase()) ?? false);
+    const matchesSkill = filterSkill === "all" || (freelancer.bio?.toLowerCase().includes(filterSkill.toLowerCase()) ?? false);
     return matchesSearch && matchesSkill;
   });
 
@@ -87,7 +115,7 @@ export default function FindFreelancers() {
                 <SelectValue placeholder="Filter by skill" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Skills</SelectItem>
+                <SelectItem value="all">All Skills</SelectItem>
                 <SelectItem value="React">React</SelectItem>
                 <SelectItem value="TypeScript">TypeScript</SelectItem>
                 <SelectItem value="Python">Python</SelectItem>
@@ -139,13 +167,13 @@ export default function FindFreelancers() {
                   <div className="flex items-start gap-4">
                     <Avatar className="h-16 w-16">
                       <AvatarFallback className="bg-gradient-primary text-primary-foreground">
-                        {freelancer.bio?.slice(0, 2).toUpperCase() || 'FR'}
+                        {freelancer.full_name?.slice(0, 2).toUpperCase() || 'FR'}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
                         <div>
-                          <h2 className="text-lg font-bold">{freelancer.bio || 'Freelancer'}</h2>
+                          <h2 className="text-lg font-bold">{freelancer.full_name || 'Freelancer'}</h2>
                           <div className="flex items-center gap-2 text-xs text-muted-foreground">
                             <Star className="h-4 w-4 text-yellow-400" />
                             {freelancer.rating ?? '—'}
@@ -157,6 +185,19 @@ export default function FindFreelancers() {
                       </div>
                       <div className="text-xs text-muted-foreground mt-1">
                         {freelancer.experience_level || '—'}
+                      </div>
+                      {/* Projects List */}
+                      <div className="mt-2">
+                        <span className="font-semibold text-sm">Projects:</span>
+                        {freelancerProjects[freelancer.id] && freelancerProjects[freelancer.id].length > 0 ? (
+                          <ul className="list-disc ml-5 text-sm">
+                            {freelancerProjects[freelancer.id].map(project => (
+                              <li key={project.id}>{project.title}</li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <span className="ml-2 text-gray-400">No projects</span>
+                        )}
                       </div>
                     </div>
                   </div>

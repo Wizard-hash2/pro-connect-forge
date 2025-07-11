@@ -139,7 +139,7 @@ export default function ClientDashboard() {
             <Briefcase className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-primary">{clientJobs.length}</div>
+            <div className="text-2xl font-bold text-primary">{clientJobs.length > 0 ? clientJobs.length : '—'}</div>
             <p className="text-xs text-muted-foreground">
               <TrendingUp className="inline h-3 w-3 mr-1" />
               {/* Placeholder for stats */}
@@ -154,7 +154,7 @@ export default function ClientDashboard() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-primary">{clientApplications.length}</div>
+            <div className="text-2xl font-bold text-primary">{clientApplications.length > 0 ? clientApplications.length : '—'}</div>
             <p className="text-xs text-muted-foreground">
               <TrendingUp className="inline h-3 w-3 mr-1" />
               {/* Placeholder for stats */}
@@ -169,7 +169,7 @@ export default function ClientDashboard() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-primary">${budgetSpent}</div>
+            <div className="text-2xl font-bold text-primary">{budgetSpent > 0 ? `$${budgetSpent}` : '—'}</div>
             <p className="text-xs text-muted-foreground">
               <TrendingUp className="inline h-3 w-3 mr-1" />
               {/* Placeholder for stats */}
@@ -184,7 +184,7 @@ export default function ClientDashboard() {
             <Star className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-primary">{avgRating}</div>
+            <div className="text-2xl font-bold text-primary">{avgRating !== '\u2014' && avgRating !== undefined && avgRating !== null ? avgRating : '—'}</div>
             <p className="text-xs text-muted-foreground">
               {/* Placeholder for completed projects count */}
               From {clientJobs.filter(job => job.status === 'completed').length} completed projects

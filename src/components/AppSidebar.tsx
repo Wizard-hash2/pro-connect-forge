@@ -28,7 +28,6 @@ const clientItems = [
   { title: "Dashboard", url: "/", icon: BarChart3 },
   { title: "Post Job", url: "/post-job", icon: PlusCircle },
   { title: "Find Freelancers", url: "/find-freelancers", icon: Search },
-  { title: "My Projects", url: "/projects", icon: Briefcase },
   { title: "Messages", url: "/messages", icon: MessageSquare, badge: 3 },
 ];
 
@@ -66,7 +65,7 @@ export function AppSidebar({ userType }: AppSidebarProps) {
 
   return (
     <Sidebar
-      className="w-64 transition-all duration-300 bg-gradient-secondary border-r border-border/50"
+      className="w-64 transition-all duration-300 bg-white border-r border-border/50 text-blue-600"
       collapsible="icon"
     >
       <SidebarTrigger className="m-2 self-end hover:bg-accent transition-smooth" />
@@ -85,7 +84,7 @@ export function AppSidebar({ userType }: AppSidebarProps) {
                     <NavLink 
                       to={item.url} 
                       end 
-                      className={`${getNavCls} text-blue-600`}
+                      className={getNavCls}
                     >
                       <item.icon className="mr-2 h-4 w-4" />
                       <span>{item.title}</span>
@@ -108,7 +107,7 @@ export function AppSidebar({ userType }: AppSidebarProps) {
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <NavLink to="/settings" className={`${getNavCls} text-blue-600`}>
+                  <NavLink to="/settings" className={getNavCls}>
                     <Settings className="mr-2 h-4 w-4" />
                     <span>Settings</span>
                   </NavLink>

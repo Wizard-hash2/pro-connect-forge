@@ -142,7 +142,7 @@ export default function FreelancerDashboard() {
             <Briefcase className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-primary">{activeProjects}</div>
+            <div className="text-2xl font-bold text-primary">{activeProjects > 0 ? activeProjects : '—'}</div>
             <p className="text-xs text-muted-foreground">
               <TrendingUp className="inline h-3 w-3 mr-1" />
               +1 from last month
@@ -156,7 +156,7 @@ export default function FreelancerDashboard() {
             <User className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-primary">{myApplications.length}</div>
+            <div className="text-2xl font-bold text-primary">{myApplications.length > 0 ? myApplications.length : '—'}</div>
             <p className="text-xs text-muted-foreground">
               {myApplications.filter(app => app.status === 'pending').length} pending responses
             </p>
@@ -169,7 +169,7 @@ export default function FreelancerDashboard() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-primary">${earnings}</div>
+            <div className="text-2xl font-bold text-primary">{earnings > 0 ? `$${earnings}` : '—'}</div>
             <p className="text-xs text-muted-foreground">
               <TrendingUp className="inline h-3 w-3 mr-1" />
               +15% from last month
@@ -183,7 +183,7 @@ export default function FreelancerDashboard() {
             <Star className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-primary">{successRate}%</div>
+            <div className="text-2xl font-bold text-primary">{myApplications.length > 0 ? `${successRate}%` : '—'}</div>
             <p className="text-xs text-muted-foreground">
               From {myApplications.length} applications
             </p>

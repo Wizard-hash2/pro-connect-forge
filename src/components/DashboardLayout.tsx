@@ -23,10 +23,18 @@ interface DashboardLayoutProps {
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const { profile, loading, error, logout } = useUserProfile();
   const navigate = useNavigate();
+  const [searchQuery, setSearchQuery] = useState('');
 
   if (loading) return <div>Loading user info...</div>;
   if (error) return <div className="text-red-500">Error: {error}</div>;
   if (!profile) return <div>Please log in.</div>;
+
+  const handleLogout = async () => {
+    await logout();
+    localStorage.clear();
+    sessionStorage.clear();
+    navigate('/auth');
+  };
 
   return (
     <SidebarProvider>
@@ -51,13 +59,24 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                     <Input 
                       placeholder={profile.user_type === "client" ? "Search freelancers..." : "Search jobs..."} 
                       className="pl-10 bg-background"
+                      value={searchQuery}
+                      onChange={e => setSearchQuery(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          if (searchQuery.trim()) {
+                            navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+                            setSearchQuery('');
+                          }
+                        }
+                      }}
                     />
                   </div>
                 </div>
               </div>
 
               <div className="flex items-center gap-3">
-                <Button variant="ghost" size="icon" className="relative">
+                <Button variant="ghost" size="icon" className="relative" onClick={() => navigate('/messages')}>
                   <Bell className="h-5 w-5" />
                   <span className="absolute -top-1 -right-1 h-3 w-3 bg-primary rounded-full"></span>
                 </Button>
@@ -89,8 +108,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                       <span>Settings</span>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={async () => { await logout(); navigate('/login'); }}>
-                      <span>Log out</span>
+                    <DropdownMenuItem onClick={handleLogout} className="text-red-500 cursor-pointer">
+                      Log out
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
