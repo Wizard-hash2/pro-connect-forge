@@ -19,6 +19,7 @@ import Applications from './pages/Applications';
 import Settings from './pages/Settings';
 import BrowseJobs from './pages/BrowseJobs';
 import SearchPage from './pages/SearchPage';
+import Verified from './pages/Verified';
 
 const queryClient = new QueryClient();
 
@@ -36,7 +37,9 @@ const App = () => (
             {/* Add more navigation links here */}
           </nav>
           <Routes>
-            <Route path="/" element={
+            <Route path="/" element={<Auth />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/dashboard" element={
               <DashboardLayout>
                 <ClientDashboard />
               </DashboardLayout>
@@ -86,8 +89,8 @@ const App = () => (
                 <Messages />
               </DashboardLayout>
             } />
-            <Route path="/auth" element={<Auth />} />
             <Route path="/search" element={<SearchPage />} />
+            <Route path="/verified" element={<Verified />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

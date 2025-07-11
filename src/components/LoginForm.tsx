@@ -100,7 +100,7 @@ export function LoginForm() {
       if (userType === 'freelancer') {
         navigate('/freelancer');
       } else {
-        navigate('/');
+        navigate('/dashboard');
       }
     }, 1000);
   };
