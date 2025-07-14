@@ -1,0 +1,4 @@
+  [build]
+    base = "Hackathon/pro-connect-forge"
+    publish = "dist"
+    command = "npm run build"
