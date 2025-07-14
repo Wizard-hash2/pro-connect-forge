@@ -25,7 +25,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 
 const clientItems = [
-  { title: "Dashboard", url: "/", icon: BarChart3 },
+  { title: "Dashboard", url: "/dashboard", icon: BarChart3 },
   { title: "Post Job", url: "/post-job", icon: PlusCircle },
   { title: "Find Freelancers", url: "/find-freelancers", icon: Search },
   { title: "Messages", url: "/messages", icon: MessageSquare, badge: 3 },
@@ -59,20 +59,20 @@ export function AppSidebar({ userType }: AppSidebarProps) {
   };
 
   const getNavCls = ({ isActive }: { isActive: boolean }) =>
-    isActive 
-      ? "bg-gradient-primary text-primary-foreground font-medium shadow-soft" 
-      : "hover:bg-accent transition-smooth";
+    isActive
+      ? "bg-blue-100 text-blue-700 font-semibold border-l-4 border-blue-500 shadow-none transition-colors duration-150"
+      : "hover:bg-blue-50 hover:text-blue-700 transition-colors duration-150 focus:ring-2 focus:ring-blue-400";
 
   return (
     <Sidebar
-      className="w-64 transition-all duration-300 bg-white border-r border-border/50 text-blue-600"
+      className="w-64 transition-all duration-300 bg-card/50 border-r border-border/50 text-blue-600"
       collapsible="icon"
     >
-      <SidebarTrigger className="m-2 self-end hover:bg-accent transition-smooth" />
+      <SidebarTrigger className="m-2 self-end hover:bg-blue-50 focus:ring-2 focus:ring-blue-400 transition-colors duration-150" />
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel className="text-primary font-medium">
+          <SidebarGroupLabel className="text-blue-700 font-semibold">
             {userType === "client" ? "Client Tools" : "Freelancer Tools"}
           </SidebarGroupLabel>
 
@@ -81,15 +81,15 @@ export function AppSidebar({ userType }: AppSidebarProps) {
               {items.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    <NavLink 
-                      to={item.url} 
-                      end 
+                    <NavLink
+                      to={item.url}
+                      end
                       className={getNavCls}
                     >
-                      <item.icon className="mr-2 h-4 w-4" />
+                      <item.icon className="mr-2 h-4 w-4 text-blue-500" />
                       <span>{item.title}</span>
                       {item.badge && (
-                        <Badge variant="secondary" className="ml-auto bg-primary text-primary-foreground">
+                        <Badge variant="secondary" className="ml-auto bg-blue-500 text-white font-bold">
                           {item.badge}
                         </Badge>
                       )}
@@ -108,7 +108,7 @@ export function AppSidebar({ userType }: AppSidebarProps) {
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
                   <NavLink to="/settings" className={getNavCls}>
-                    <Settings className="mr-2 h-4 w-4" />
+                    <Settings className="mr-2 h-4 w-4 text-blue-500" />
                     <span>Settings</span>
                   </NavLink>
                 </SidebarMenuButton>

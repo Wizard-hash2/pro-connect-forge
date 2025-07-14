@@ -22,6 +22,9 @@ export async function getApplicationsByFreelancerId(freelancerId: string): Promi
 
 // Create a new application
 export async function createApplication(application: Omit<Application, 'id' | 'created_at'>): Promise<{ data: Application | null; error: string | null }> {
+  if (!application.freelancer_id) {
+    return { data: null, error: 'freelancer_id is required and cannot be null.' };
+  }
   const { data, error } = await supabase.from('applications').insert([application]).select().single();
   return { data, error: error?.message || null };
 } 

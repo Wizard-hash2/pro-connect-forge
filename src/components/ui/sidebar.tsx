@@ -197,16 +197,14 @@ const Sidebar = React.forwardRef<
           <SheetContent
             data-sidebar="sidebar"
             data-mobile="true"
-            className="w-[--sidebar-width] p-0 text-sidebar-foreground [&>button]:hidden"
-            style={{ background: 'var(--sidebar-background)' }}
-            style={
-              {
-                "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
-              } as React.CSSProperties
-            }
+            className="w-[--sidebar-width] p-0 [&>button]:hidden border-r border-border/50 bg-transparent"
+            style={{
+              background: 'linear-gradient(135deg, #111827 0%, #2563eb 100%)',
+              "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
+            } as React.CSSProperties}
             side={side}
           >
-            <div className="flex h-full w-full flex-col">{children}</div>
+            <div className="flex h-full w-full flex-col text-white">{children}</div>
           </SheetContent>
         </Sheet>
       )
@@ -244,12 +242,12 @@ const Sidebar = React.forwardRef<
               : "group-data-[collapsible=icon]:w-[--sidebar-width-icon] group-data-[side=left]:border-r group-data-[side=right]:border-l",
             className
           )}
-          style={{ background: 'var(--sidebar-background)' }}
+          style={{ background: 'linear-gradient(135deg, #111827 0%, #2563eb 100%)' }}
           {...props}
         >
           <div
             data-sidebar="sidebar"
-            className="flex h-full w-full flex-col group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:border-sidebar-border group-data-[variant=floating]:shadow"
+            className="flex h-full w-full flex-col group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:border-sidebar-border group-data-[variant=floating]:shadow text-white"
           >
             {children}
           </div>
