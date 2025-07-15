@@ -49,8 +49,16 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         </div>
         <div className="flex-1 flex flex-col">
           {/* Header */}
-          <header className="h-16 border-b border-border/50 bg-card/50 backdrop-blur-sm sticky top-0 z-50">
+          <header className="h-20 border-b border-border/50 bg-card/50 backdrop-blur-sm sticky top-0 z-50">
             <div className="flex items-center justify-between px-6 h-full">
+              {/* Kenwork Logo and Vision Header */}
+              <div className="flex items-center gap-4">
+                <img src="/KenworkLogo.png" alt="Kenwork Logo" className="h-10 w-10 object-contain" />
+                <div>
+                  <span className="text-2xl font-bold text-blue-700">KENWORK</span>
+                  <span className="block text-sm text-gray-600">Everyone Deserves a chance</span>
+                </div>
+              </div>
               <div className="flex items-center gap-4">
                 <SidebarTrigger className="hover:bg-accent transition-smooth" />
                 <div className="hidden md:flex items-center gap-2 max-w-md">

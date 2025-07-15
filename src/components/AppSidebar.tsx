@@ -29,6 +29,7 @@ const clientItems = [
   { title: "Post Job", url: "/post-job", icon: PlusCircle },
   { title: "Find Freelancers", url: "/find-freelancers", icon: Search },
   { title: "Messages", url: "/messages", icon: MessageSquare, badge: 3 },
+  { title: "AI Me", url: "/ai-me", icon: MessageSquare },
 ];
 
 const freelancerItems = [

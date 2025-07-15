@@ -20,6 +20,9 @@ import Settings from './pages/Settings';
 import BrowseJobs from './pages/BrowseJobs';
 import SearchPage from './pages/SearchPage';
 import Verified from './pages/Verified';
+import AIAssistantWidget from './components/AIAssistantWidget';
+import AIAssistantPage from './pages/AIAssistantPage';
+import AIMePage from './pages/AIMePage';
 
 const queryClient = new QueryClient();
 
@@ -30,6 +33,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <AIAssistantWidget />
           <nav className="p-4 bg-gray-100 flex gap-4">
             <Link to="/auth" className="text-blue-600 hover:underline">Auth</Link>
             {/* Remove or comment out the Sign Up link */}
@@ -91,6 +95,12 @@ const App = () => (
             } />
             <Route path="/search" element={<SearchPage />} />
             <Route path="/verified" element={<Verified />} />
+            <Route path="/ai-assistant" element={<AIAssistantPage />} />
+            <Route path="/ai-me" element={
+              <DashboardLayout>
+                <AIMePage />
+              </DashboardLayout>
+            } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
