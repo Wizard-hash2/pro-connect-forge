@@ -260,7 +260,7 @@ const AIMePage: React.FC = () => {
     setShowWelcome(false);
     try {
       const prompt = chatInput;
-      const response = await fetch('http://localhost:3001/rag/ask', {
+      const response = await fetch('/api/rag/ask', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -289,7 +289,7 @@ const AIMePage: React.FC = () => {
     if (!lastUserMsg) return;
     try {
       const prompt = lastUserMsg.text;
-      const response = await fetch('http://localhost:3001/rag/ask', {
+      const response = await fetch('/api/rag/ask', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
