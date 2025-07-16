@@ -260,19 +260,18 @@ const AIMePage: React.FC = () => {
     setShowWelcome(false);
     try {
       const prompt = chatInput;
-      const response = await fetch(GOOGLE_AI_API_URL, {
+      const response = await fetch('http://localhost:3001/rag/ask', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-goog-api-key': GOOGLE_AI_API_KEY,
         },
-        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
+        body: JSON.stringify({ prompt }),
       });
       if (!response.ok) {
         throw new Error(`API error: ${response.status} ${response.statusText}`);
       }
       const data = await response.json();
-      const aiText = data?.candidates?.[0]?.content?.parts?.[0]?.text || 'Sorry, I could not generate a response.';
+      const aiText = data?.response || 'Sorry, I could not generate a response.';
       setAiMessages(prev => [...prev, { role: 'ai', text: aiText }]);
     } catch (err) {
       setError('Failed to get a response from AI. Please try again.');
@@ -290,19 +289,18 @@ const AIMePage: React.FC = () => {
     if (!lastUserMsg) return;
     try {
       const prompt = lastUserMsg.text;
-      const response = await fetch(GOOGLE_AI_API_URL, {
+      const response = await fetch('http://localhost:3001/rag/ask', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-goog-api-key': GOOGLE_AI_API_KEY,
         },
-        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
+        body: JSON.stringify({ prompt }),
       });
       if (!response.ok) {
         throw new Error(`API error: ${response.status} ${response.statusText}`);
       }
       const data = await response.json();
-      const aiText = data?.candidates?.[0]?.content?.parts?.[0]?.text || 'Sorry, I could not generate a response.';
+      const aiText = data?.response || 'Sorry, I could not generate a response.';
       setAiMessages(prev => [...prev, { role: 'ai', text: aiText }]);
     } catch (err) {
       setError('Failed to get a response from AI. Please try again.');
