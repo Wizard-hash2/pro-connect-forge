@@ -151,6 +151,26 @@ for f in freelancers:
         "metadata": {"category": "freelancer", "id": f.get('id')}
     })
 
+# 4b. Fetch all profiles (clients and freelancers) and add to documents
+print("Fetching all profiles from Supabase...")
+profiles = supabase.table("profiles").select("*").execute().data
+for p in profiles:
+    profile_text = (
+        f"Profile ID: {p.get('id', 'N/A')}\n"
+        f"User Type: {p.get('user_type', 'N/A')}\n"
+        f"Full Name: {p.get('full_name', 'N/A')}\n"
+        f"Email: {p.get('email', 'N/A')}\n"
+        f"Education: {p.get('education', 'N/A')}\n"
+        f"Certification: {p.get('certification', 'N/A')}\n"
+        f"Projects: {p.get('projects', 'N/A')}\n"
+        f"Created At: {p.get('created_at', 'N/A')}\n"
+        f"Updated At: {p.get('updated_at', 'N/A')}\n"
+    )
+    documents.append({
+        "content": profile_text,
+        "metadata": {"category": "profile", "id": p.get('id'), "user_type": p.get('user_type')}
+    })
+
 # 5. Upload documents (upsert by content)
 for doc in documents:
     try:
@@ -211,6 +231,19 @@ def answer_user_query(query, knowledge_base, fetch_external):
         return "No negative information about competitors found externally."
     return format_answer(external_results, source="external")
 
+def freelancer_exists_by_name(knowledge_base, name):
+    name = name.lower()
+    for entry in knowledge_base:
+        if entry.get("metadata", {}).get("category") == "profile" and entry.get("metadata", {}).get("user_type") == "freelancer":
+            # Extract name from content
+            lines = entry["content"].split('\n')
+            for line in lines:
+                if line.startswith("Full Name:"):
+                    full_name = line.replace("Full Name:", "").strip().lower()
+                    if name in full_name:
+                        return True, full_name
+    return False, None
+
 # Example usage (manual test):
 if __name__ == "__main__":
     # ... existing upload logic ...
@@ -220,3 +253,11 @@ if __name__ == "__main__":
     kb_rows = supabase.table("knowledge_base").select("content, metadata").execute().data
     user_query = input("Enter your question for the AI: ")
     print(answer_user_query(user_query, kb_rows, fetch_external))
+
+    print("\n--- Freelancer Existence Check ---")
+    user_query = input("Enter a freelancer name to check if they exist: ")
+    exists, found_name = freelancer_exists_by_name(kb_rows, user_query)
+    if exists:
+        print(f"Yes, there is a freelancer called {found_name} on this platform.")
+    else:
+        print(f"No, there is no freelancer called {user_query} on this platform.")
