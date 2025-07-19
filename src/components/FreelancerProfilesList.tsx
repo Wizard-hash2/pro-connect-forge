@@ -26,6 +26,18 @@ export function FreelancerProfilesList() {
             <div className="text-sm text-gray-500">Bio: {profile.bio}</div>
             <div className="text-sm text-gray-500">Rating: {profile.rating}</div>
             <div className="text-sm text-gray-500">Completed Projects: {profile.completed_projects}</div>
+            {profile.projects && Array.isArray(profile.projects) && profile.projects.length > 0 && (
+              <div className="mt-2">
+                <span className="font-semibold text-sm">Projects:</span>
+                <ul className="list-disc ml-5 text-sm">
+                  {profile.projects.map((project: any, idx: number) => (
+                    <li key={idx}>
+                      <span className="font-medium">{project.title}</span>: {project.description}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </li>
         ))}
       </ul>

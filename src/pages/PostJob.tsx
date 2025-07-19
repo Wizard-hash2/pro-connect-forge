@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { useUserProfile } from '@/context/UserProfileContext';
 import { createJobPost } from '@/services/jobPostsService';
+import axios from 'axios';
 
 interface JobFormData {
   title: string;
@@ -47,6 +48,96 @@ const skillSuggestions = [
   "Data Analysis", "SQL", "Machine Learning", "AWS"
 ];
 
+const AI_QUESTIONS = [
+  { field: "title", question: "What is the title of your job post?" },
+  { field: "description", question: "Please describe the job in detail." },
+  { field: "skills", question: "What skills are required? (List up to 6)" },
+  { field: "budget_min", question: "What is the minimum budget for this job?" },
+  { field: "budget_max", question: "What is the maximum budget for this job?" },
+  { field: "deadline", question: "What is the deadline for this job? (YYYY-MM-DD)" },
+  { field: "required_experience_level", question: "What experience level do you require? (junior, mid, senior, expert)" },
+];
+
+function AIJobPostHelper({ onComplete }) {
+  const [step, setStep] = useState(0);
+  const [answers, setAnswers] = useState({});
+  const [chat, setChat] = useState([
+    { from: "ai", text: "Let's create your job post! I'll ask you a few questions." }
+  ]);
+  const [loading, setLoading] = useState(false);
+  const [polished, setPolished] = useState(null);
+
+  const handleUserInput = async (input) => {
+    const field = AI_QUESTIONS[step].field;
+    const newAnswers = { ...answers, [field]: input };
+    setAnswers(newAnswers);
+    setChat([...chat, { from: "user", text: input }]);
+    if (step < AI_QUESTIONS.length - 1) {
+      setStep(step + 1);
+      setChat((c) => [...c, { from: "ai", text: AI_QUESTIONS[step + 1].question }]);
+    } else {
+      setLoading(true);
+      try {
+        // Call your backend LLM endpoint (replace URL as needed)
+        const res = await axios.post("/api/polish-job-post", newAnswers);
+        setPolished(res.data.summary);
+        setChat((c) => [
+          ...c,
+          { from: "ai", text: "Here's your polished job post overview:" },
+          { from: "ai", text: res.data.summary }
+        ]);
+        if (onComplete) onComplete(newAnswers, res.data.summary);
+      } catch (err) {
+        setChat((c) => [
+          ...c,
+          { from: "ai", text: "Sorry, something went wrong with the AI summary." }
+        ]);
+      }
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="max-w-lg mx-auto p-4 bg-white rounded shadow">
+      <div className="mb-4">
+        {chat.map((msg, idx) => (
+          <div key={idx} className={msg.from === "ai" ? "text-blue-700" : "text-black"}>
+            <b>{msg.from === "ai" ? "AI" : "You"}:</b> {msg.text}
+          </div>
+        ))}
+      </div>
+      {!polished && !loading && (
+        <form
+          onSubmit={e => {
+            e.preventDefault();
+            const input = e.target.elements.input.value;
+            if (input.trim()) handleUserInput(input.trim());
+            e.target.reset();
+          }}
+        >
+          <input
+            name="input"
+            className="w-full border rounded px-3 py-2"
+            autoFocus
+            placeholder="Type your answer..."
+          />
+        </form>
+      )}
+      {loading && <div>Polishing your job post...</div>}
+      {polished && (
+        <div className="mt-4">
+          <button
+            className="bg-green-600 text-white px-4 py-2 rounded"
+            onClick={() => onComplete && onComplete(answers, polished)}
+          >
+            Use This Job Post
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function PostJob() {
   const [currentStep, setCurrentStep] = useState(1);
   const [skillInput, setSkillInput] = useState("");
@@ -65,6 +156,7 @@ export default function PostJob() {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [useAIHelper, setUseAIHelper] = useState(false);
 
   const totalSteps = 4;
   const progress = (currentStep / totalSteps) * 100;
@@ -142,6 +234,22 @@ export default function PostJob() {
       });
       setCurrentStep(1);
     }
+  };
+
+  const handleAIComplete = (data, summary) => {
+    setFormData(prev => ({
+      ...prev,
+      title: data.title || "",
+      description: summary || data.description || "",
+      skills: data.skills ? data.skills.split(/,|;/).map(s => s.trim()).filter(Boolean) : [],
+      budgetMin: Number(data.budget_min) || 0,
+      budgetMax: Number(data.budget_max) || 0,
+      duration: data.deadline || "",
+      experience: data.required_experience_level || "",
+      teamSize: "1"
+    }));
+    setUseAIHelper(false);
+    setTimeout(() => handleSubmit(), 100); // submit after state update
   };
 
   const renderStep = () => {
@@ -454,7 +562,16 @@ export default function PostJob() {
         <Separator />
 
         <CardContent className="pt-6">
-          {renderStep()}
+          <div className="flex justify-end mb-4">
+            <Button variant={useAIHelper ? "secondary" : "default"} onClick={() => setUseAIHelper(v => !v)}>
+              {useAIHelper ? "Switch to Form" : "Try AI Job Post Helper"}
+            </Button>
+          </div>
+          {useAIHelper ? (
+            <AIJobPostHelper onComplete={handleAIComplete} />
+          ) : (
+            <div>{renderStep()}</div>
+          )}
 
           <Separator className="my-8" />
 

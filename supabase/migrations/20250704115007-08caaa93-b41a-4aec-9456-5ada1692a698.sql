@@ -58,6 +58,9 @@ INSERT INTO public.skills (id, name, category, description) VALUES
   (gen_random_uuid(), 'AWS', 'Cloud', 'Amazon Web Services cloud platform')
 ON CONFLICT (id) DO NOTHING;
 
+-- Add projects field to freelancer_profiles
+ALTER TABLE public.freelancer_profiles ADD COLUMN IF NOT EXISTS projects JSONB DEFAULT '[]';
+
 -- Create function to handle new user registration
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$

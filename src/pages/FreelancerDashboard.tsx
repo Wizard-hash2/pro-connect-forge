@@ -18,7 +18,10 @@ import { useUserProfile } from '@/context/UserProfileContext';
 import { useJobPosts } from '@/hooks/useJobPosts';
 import { useApplications } from '@/hooks/useApplications';
 import { createApplication } from '@/services/applicationsService';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useFreelancerSkills } from '@/hooks/useFreelancerSkills';
+import { SignUpForm } from '@/components/SignUpForm';
+import { supabase } from '@/integrations/supabase/client';
 
 interface JobListing {
   id: string;
@@ -84,11 +87,35 @@ export default function FreelancerDashboard() {
   const { data: jobs, loading: jobsLoading, error: jobsError } = useJobPosts();
   const { data: applications, loading: applicationsLoading, error: applicationsError } = useApplications();
   const [applyState, setApplyState] = useState({}); // { [jobId]: { loading, error, success } }
+  const { data: freelancerSkills, loading: skillsLoading, error: skillsError, refetch } = useFreelancerSkills();
+  const [showSkillsModal, setShowSkillsModal] = useState(false);
+  const [emailVerified, setEmailVerified] = useState(false);
 
-  if (loading || jobsLoading || applicationsLoading) return <div>Loading dashboard...</div>;
+  useEffect(() => {
+    async function checkEmailVerified() {
+      const { data: { user } } = await supabase.auth.getUser();
+      setEmailVerified(!!user?.email_confirmed_at);
+    }
+    checkEmailVerified();
+  }, []);
+
+  useEffect(() => {
+    if (
+      profile?.user_type === 'freelancer' &&
+      !skillsLoading &&
+      freelancerSkills &&
+      freelancerSkills.filter(s => s.freelancer_id === profile.id).length === 0 &&
+      emailVerified
+    ) {
+      setShowSkillsModal(true);
+    }
+  }, [profile, skillsLoading, freelancerSkills, emailVerified]);
+
+  if (loading || jobsLoading || applicationsLoading || skillsLoading) return <div>Loading dashboard...</div>;
   if (error) return <div className="text-red-500">Error: {error}</div>;
   if (jobsError) return <div className="text-red-500">Error loading jobs: {jobsError}</div>;
   if (applicationsError) return <div className="text-red-500">Error loading applications: {applicationsError}</div>;
+  if (skillsError) return <div className="text-red-500">Error loading skills: {skillsError}</div>;
   if (!profile) return <div>Please log in.</div>;
 
   // Filter applications for this freelancer
@@ -114,6 +141,14 @@ export default function FreelancerDashboard() {
 
   return (
     <div className="space-y-6 animate-fade-in">
+      {showSkillsModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded shadow-lg max-w-lg w-full relative">
+            <button onClick={() => setShowSkillsModal(false)} className="absolute top-2 right-2 text-gray-500">&times;</button>
+            <SignUpForm onlySkillsStep onComplete={() => { setShowSkillsModal(false); refetch(); }} />
+          </div>
+        </div>
+      )}
       {/* Welcome Section */}
       <div className="bg-gradient-primary p-6 rounded-xl text-primary-foreground shadow-large">
         <div className="flex justify-between items-start">

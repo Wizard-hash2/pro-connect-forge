@@ -38,13 +38,13 @@ async function callOpenRouterAI(prompt, context) {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': 'Bearer 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',
+      'Authorization': 'Bearer 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',
       'HTTP-Referer': 'http://localhost:8080', // Optional, update to your site URL if deploying
       'X-Title': 'Mercy Shop', // Optional, update to your site name if deploying
     },
     body: JSON.stringify({
       model: 'openai/gpt-4o',
-      max_tokens: 1000,
+      max_tokens: 300,
       messages: [
         { role: 'system', content: context || '' },
         { role: 'user', content: prompt }

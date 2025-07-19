@@ -1,13 +1,15 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { useUserProfile } from '@/context/UserProfileContext';
 import { updateProfile } from '@/services/profilesService';
-import { getProjectsByProfile, addProjectWithImage, deleteProject } from '@/services/projectsService';
+import { updateFreelancerProfile } from '@/services/freelancerProfilesService';
 import { supabase } from '@/integrations/supabase/client';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useJobPosts } from '@/hooks/useJobPosts';
+import { useFreelancerSkills } from '@/hooks/useFreelancerSkills';
+import { useSkills } from '@/hooks/useSkills';
 
 export default function Profile() {
   const { profile, loading, error, refresh } = useUserProfile();
@@ -16,28 +18,16 @@ export default function Profile() {
   const [country, setCountry] = useState(profile?.country || '');
   const [education, setEducation] = useState(profile?.education || '');
   const [certification, setCertification] = useState(profile?.certification || '');
-  const [projects, setProjects] = useState<any[]>([]);
   const [projectTitle, setProjectTitle] = useState('');
   const [projectDescription, setProjectDescription] = useState('');
-  const [projectImage, setProjectImage] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [projectUploading, setProjectUploading] = useState(false);
   const [projectSuccess, setProjectSuccess] = useState(false);
   const [projectError, setProjectError] = useState<string | null>(null);
   const { data: jobPosts } = useJobPosts();
-
-  // Fetch projects for this profile (for freelancers)
-  const fetchProjects = async () => {
-    if (!profile?.id) return;
-    const { data, error } = await getProjectsByProfile(profile.id);
-    setProjects(data || []);
-    setProjectError(error);
-  };
-  useEffect(() => {
-    if (profile?.user_type === 'freelancer') fetchProjects();
-    // eslint-disable-next-line
-  }, [profile?.id, profile?.user_type]);
+  const { data: freelancerSkills, loading: skillsLoading, error: skillsError } = useFreelancerSkills();
+  const { data: allSkills } = useSkills();
 
   // Handle profile save
   const handleSave = async (e: React.FormEvent) => {
@@ -60,18 +50,21 @@ export default function Profile() {
   // Handle project add (for freelancers)
   const handleProjectSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!profile?.id || !projectTitle || !projectImage) return;
+    if (!profile?.id || !projectTitle) return;
     setProjectUploading(true);
     setProjectError(null);
     setProjectSuccess(false);
-    const { error } = await addProjectWithImage(profile.id, projectTitle, projectDescription, projectImage);
-    if (error) setProjectError(error);
-    else {
-      setProjectSuccess(true);
+    try {
+      const newProjects = Array.isArray(profile.projects) ? [...profile.projects, { title: projectTitle, description: projectDescription }] : [{ title: projectTitle, description: projectDescription }];
+      await updateFreelancerProfile(profile.id, {
+        projects: newProjects,
+      });
+      await refresh();
       setProjectTitle('');
       setProjectDescription('');
-      setProjectImage(null);
-      fetchProjects();
+      setProjectSuccess(true);
+    } catch (err: any) {
+      setProjectError(err.message || 'Failed to add project');
     }
     setProjectUploading(false);
   };
@@ -97,9 +90,51 @@ export default function Profile() {
     setAvatarUrl(url);
   };
 
+  // Before rendering projects, normalize profile.projects to always be an array
+  const projects = Array.isArray(profile?.projects)
+    ? profile.projects
+    : (typeof profile?.projects === 'string' && profile.projects.trim().startsWith('[')
+        ? (() => { try { return JSON.parse(profile.projects); } catch { return []; } })()
+        : []);
+
   return (
     <div className="max-w-2xl mx-auto p-8 bg-white rounded-lg shadow-lg">
       <h1 className="text-3xl font-bold mb-8 text-center">My Profile</h1>
+      {/* Freelancer Skills Section */}
+      {profile?.user_type === 'freelancer' && (
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold mb-4">My Skills</h2>
+          {skillsLoading ? (
+            <div>Loading skills...</div>
+          ) : skillsError ? (
+            <div className="text-red-500">Error: {skillsError}</div>
+          ) : (
+            <ul className="space-y-2">
+              {freelancerSkills?.filter(s => s.freelancer_id === profile.id).length === 0 ? (
+                <li className="text-gray-500">No skills added yet.</li>
+              ) : (
+                freelancerSkills?.filter(s => s.freelancer_id === profile.id).map(skill => {
+                  const skillMeta = allSkills?.find(meta => meta.id === skill.skill_id);
+                  return (
+                    <li key={skill.skill_id} className="border rounded p-3 flex flex-col md:flex-row md:items-center md:justify-between">
+                      <div>
+                        <span className="font-semibold">{skillMeta?.name || 'Skill'}</span>
+                        {skillMeta?.category && <span className="ml-2 text-xs text-gray-500">({skillMeta.category})</span>}
+                        <span className="ml-2 text-sm text-gray-600">Experience: {skill.years_experience} years</span>
+                      </div>
+                      <div className="mt-2 md:mt-0">
+                        <span className="text-sm">Proficiency: </span>
+                        <span className="font-bold">{skill.proficiency_level}</span>
+                        <span className="text-xs text-gray-500 ml-1">/5</span>
+                      </div>
+                    </li>
+                  );
+                })
+              )}
+            </ul>
+          )}
+        </div>
+      )}
       <form onSubmit={handleSave} className="space-y-6 mb-10">
         <div className="flex flex-col items-center mb-6">
           <Avatar className="w-24 h-24 mb-2">
@@ -153,11 +188,7 @@ export default function Profile() {
                 <label className="block font-medium mb-1">Description</label>
                 <textarea value={projectDescription} onChange={e => setProjectDescription(e.target.value)} className="w-full border rounded px-3 py-2" />
               </div>
-              <div>
-                <label className="block font-medium mb-1">Project Image</label>
-                <input type="file" accept="image/*" onChange={e => setProjectImage(e.target.files?.[0] || null)} required />
-              </div>
-              <Button type="submit" className="w-full" disabled={projectUploading}>{projectUploading ? 'Uploading...' : 'Add Project'}</Button>
+              <Button type="submit" className="w-full" disabled={projectUploading}>{projectUploading ? 'Saving...' : 'Add Project'}</Button>
               {projectError && <div className="text-red-500 mt-2">{projectError}</div>}
               {projectSuccess && <div className="text-green-600 mt-2">Project added!</div>}
             </form>
@@ -165,9 +196,8 @@ export default function Profile() {
               {projects.length === 0 ? (
                 <div className="text-gray-500">No projects yet.</div>
               ) : (
-                projects.map(project => (
-                  <Card key={project.id} className="overflow-hidden">
-                    {project.image_url && <img src={project.image_url} alt={project.title} className="w-full h-40 object-cover" />}
+                projects.map((project: any, idx: number) => (
+                  <Card key={idx} className="overflow-hidden">
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
                         {project.title}
@@ -176,7 +206,6 @@ export default function Profile() {
                     </CardHeader>
                     <CardContent>
                       <p className="text-gray-700 mb-2">{project.description}</p>
-                      <Button variant="destructive" size="sm" onClick={async () => { await deleteProject(project.id); fetchProjects(); }}>Delete</Button>
                     </CardContent>
                   </Card>
                 ))

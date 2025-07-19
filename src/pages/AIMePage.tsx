@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useUserProfile } from '@/context/UserProfileContext';
 import ReactMarkdown from 'react-markdown';
+import axios from 'axios';
 
 const suggestionButtons = [
   'AUTO JOB POST',
@@ -84,6 +85,15 @@ function validateJobFields(job: any) {
   return errors;
 }
 
+const polishJobPost = async (jobData) => {
+  const res = await axios.post('/api/polish-job-post', jobData);
+  return res.data.summary;
+};
+const submitJobPost = async (jobData) => {
+  // Map jobData to backend fields as needed
+  return axios.post('/api/job-posts', jobData);
+};
+
 const AIMePage: React.FC = () => {
   const { profile, loading: profileLoading } = useUserProfile();
   const userName = profile && profile.full_name ? profile.full_name.split(' ')[0] : 'there';
@@ -103,6 +113,8 @@ const AIMePage: React.FC = () => {
   const [skillsValidated, setSkillsValidated] = useState(false);
   const [jobPreview, setJobPreview] = useState<any>(null);
   const [autoPostReady, setAutoPostReady] = useState(false);
+  const [awaitingJobPostConfirm, setAwaitingJobPostConfirm] = useState(false);
+  const [pendingJobPost, setPendingJobPost] = useState(null);
 
   const handleExpandToggle = (idx: number) => {
     setExpandedIndexes((prev) =>
@@ -395,6 +407,37 @@ const AIMePage: React.FC = () => {
       setChatInput('');
       return;
     }
+  }
+
+  const handleJobPostConfirmation = async (input) => {
+    setAiMessages(prev => [...prev, { role: 'user', text: input }, { role: 'ai', text: 'Submitting your job post...' }]);
+    setChatInput('');
+    setChatLoading(true);
+    try {
+      await submitJobPost(pendingJobPost);
+      setAiMessages(prev => [...prev, { role: 'ai', text: 'Your job post has been submitted!' }]);
+    } catch (err) {
+      setAiMessages(prev => [...prev, { role: 'ai', text: 'Failed to submit job post.' }]);
+    }
+    setChatLoading(false);
+    setAwaitingJobPostConfirm(false);
+    setPendingJobPost(null);
+  };
+
+  if (awaitingJobPostConfirm) {
+    if (chatInput.trim().toLowerCase().startsWith('y')) {
+      handleJobPostConfirmation(chatInput);
+      return;
+    } else if (chatInput.trim().toLowerCase().startsWith('n')) {
+      setAiMessages(prev => [...prev, { role: 'user', text: chatInput }, { role: 'ai', text: 'Okay, your job post was not submitted.' }]);
+      setAwaitingJobPostConfirm(false);
+      setPendingJobPost(null);
+      setChatInput('');
+      return;
+    }
+    setAiMessages(prev => [...prev, { role: 'ai', text: 'Please answer yes or no: Would you like to submit this job post?' }]);
+    setChatInput('');
+    return;
   }
 
   return (
