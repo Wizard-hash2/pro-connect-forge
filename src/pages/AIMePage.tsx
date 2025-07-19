@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useUserProfile } from '@/context/UserProfileContext';
 import ReactMarkdown from 'react-markdown';
 import axios from 'axios';
+import AIAssistantWidget from '../components/AIAssistantWidget';
 
 const clientSuggestions = [
   'AUTO JOB POST',
@@ -793,7 +794,7 @@ const AIMePage: React.FC = () => {
       <div className="w-full max-w-2xl mx-auto flex flex-col items-center justify-center flex-1 pt-24 pb-40">
         <div className="flex flex-col items-center mb-8">
           <div className="bg-white rounded-full shadow-lg p-2 mb-4 flex items-center justify-center" style={{ width: 90, height: 90 }}>
-            <img src="/KenworkLogo.png" alt="AI Logo" className="h-20 w-20 rounded-full object-cover" style={{ objectFit: 'cover' }} />
+            <img src="/KenworkLogo.png" alt="AI Me Logo" className="h-20 w-20 rounded-full object-cover" style={{ objectFit: 'cover' }} />
           </div>
           <h1 className="text-4xl font-bold text-white mb-2 text-center drop-shadow-lg">AI Me</h1>
           <div className="flex gap-2 mb-2">
@@ -866,7 +867,7 @@ const AIMePage: React.FC = () => {
           {chatLoading && (
             <div className="flex items-center gap-2 text-white/80 animate-pulse">
               <span className="inline-block h-4 w-4 rounded-full bg-purple-300 animate-bounce"></span>
-              AI is thinking...
+              AI Me is thinking...
             </div>
           )}
           {error && <div className="text-red-300">{error}</div>}
