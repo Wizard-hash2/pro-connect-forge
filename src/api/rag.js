@@ -30,30 +30,35 @@ async function generateEmbedding(text) {
   return Array.from(output.data);
 }
 
-// Helper to call OpenRouter API
-async function callOpenRouterAI(prompt, context) {
-  console.log('Calling OpenRouter AI with prompt:', prompt);
-  console.log('Context sent to OpenRouter AI:', context);
-  const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer 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',
-      'HTTP-Referer': 'http://localhost:8080', // Optional, update to your site URL if deploying
-      'X-Title': 'Mercy Shop', // Optional, update to your site name if deploying
-    },
-    body: JSON.stringify({
-      model: 'openai/gpt-4o',
-      max_tokens: 300,
-      messages: [
-        { role: 'system', content: context || '' },
-        { role: 'user', content: prompt }
-      ]
-    }),
-  });
+// Helper to call Gemini AI API
+async function callGeminiAI(prompt, context) {
+  console.log('Calling Gemini AI with prompt:', prompt);
+  console.log('Context sent to Gemini AI:', context);
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GOOGLE_AI_API_KEY}`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [
+              { text: (context ? context + '\n---\n' : '') + prompt }
+            ]
+          }
+        ]
+      })
+    }
+  );
   const data = await response.json();
-  console.log('OpenRouter AI raw response:', JSON.stringify(data, null, 2));
-  return data.choices?.[0]?.message?.content || data.response || 'No response from AI.';
+  console.log('Gemini AI raw response:', JSON.stringify(data, null, 2));
+  return (
+    data?.candidates?.[0]?.content?.parts?.[0]?.text ||
+    data?.candidates?.[0]?.content?.text ||
+    'No response from AI.'
+  );
 }
 
 router.post('/ask', async (req, res) => {
@@ -69,8 +74,8 @@ router.post('/ask', async (req, res) => {
     });
     if (error) throw error;
     const context = matches?.map(m => m.content).join('\n---\n') || '';
-    // 3. Call OpenRouter AI API
-    const aiResponse = await callOpenRouterAI(prompt, context);
+    // 3. Call Gemini AI API
+    const aiResponse = await callGeminiAI(prompt, context);
     res.json({ response: aiResponse });
   } catch (err) {
     console.error('RAG error:', err);

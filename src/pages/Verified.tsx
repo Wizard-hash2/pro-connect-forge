@@ -27,7 +27,7 @@ export default function Verified() {
           </p>
         </div>
         <a
-          href="https://afriwork.netlify.app/auth"
+          href="https://kenwork.onrender.com/"
           className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg shadow transition"
         >
           Go to Login

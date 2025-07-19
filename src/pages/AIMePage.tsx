@@ -3,7 +3,7 @@ import { useUserProfile } from '@/context/UserProfileContext';
 import ReactMarkdown from 'react-markdown';
 import axios from 'axios';
 
-const suggestionButtons = [
+const clientSuggestions = [
   'AUTO JOB POST',
   'AUTO RECOMMEND CANDIDATE',
   'CREATE A JOB POST',
@@ -13,30 +13,37 @@ const suggestionButtons = [
  
 ];
 
+const freelancerSuggestions = [
+  'Resume Help',
+  'Create a Job Plan',
+];
+
 const specialFlows = {
   'AUTO JOB POST': [
-    { question: 'What is the job title?' },
-    { question: 'Describe the job you want to post.' },
-    { question: 'What skills are required? (comma separated)' },
-    { question: 'What is your budget for this job?' },
-    { question: 'What is the deadline for this job?' },
+    
+    { question: 'Please Guide me On creating a job post' },
   ],
   'AUTO RECOMMEND CANDIDATE': [
-    { question: 'What is the job title or main skill you need?' },
-    { question: 'Describe the ideal candidate.' },
+    { question: 'Can You Please help to auto recommend a candidate, should I give you the skills?' },
+   
   ],
   'CREATE A JOB POST': [
-    { question: 'What is the job title?' },
-    { question: 'Describe the job you want to post.' },
-    { question: 'What skills are required? (comma separated)' },
-    { question: 'What is your budget for this job?' },
-    { question: 'What is the deadline for this job?' },
+    { question: 'Please Help me create job post in Question and answer and then summarize?' },
+    
+    
   ],
   'ADVISE ON THE JOB PLAN AND BUDGET': [
-    { question: 'Describe your job or project.' },
+    { question: 'Please help me create a budget, should I provide description' },
   ],
   'ANALYZE SKILLS': [
-    { question: 'List the skills or paste a profile to analyze.' },
+    { question: 'Please help me in looking for expected set of skills , should I provide description' },
+  ],
+  'Resume Help': [
+    { question: 'Please help generate a resume for my profile' },
+  ],
+  'Create a Job Plan': [
+    
+    { question: 'Please Guide ME here, I applied the job but I dont know how to start can you help me , should I provide the details' },
   ],
 };
 
@@ -94,6 +101,58 @@ const submitJobPost = async (jobData) => {
   return axios.post('/api/job-posts', jobData);
 };
 
+// Add helper for skill suggestion
+function suggestSkills(description: string, userSkills: string[]): string[] {
+  // Use existing skillSuggestions and inferSkillsFromText
+  const inferred = inferSkillsFromText(description);
+  // Merge userSkills and inferred, remove duplicates
+  return Array.from(new Set([...userSkills, ...inferred])).slice(0, 6);
+}
+// Add helper for budget suggestion
+function suggestBudget(description: string, skills: string[]): string {
+  // Simple heuristic: more skills or complex description = higher budget
+  let base = 200;
+  if (skills.length > 3) base += 200;
+  if (/senior|expert|complex|architecture|optimization|ai|ml|data/i.test(description)) base += 300;
+  if (/junior|beginner|simple|entry/i.test(description)) base -= 50;
+  return `$${base} - $${base + 500}`;
+}
+
+// Add a helper to detect meta/clarification questions
+function isMetaQuestion(input: string): boolean {
+  return /should i|do i need to|can i|must i|is it necessary|what do you need|what info|what information|how much info|how detailed|what should i provide|what do you want/i.test(input);
+}
+// Add a helper to generate context-aware explanations
+function getContextExplanation(field: string): string {
+  switch (field) {
+    case 'description':
+      return `To give you the most accurate help, I need a description of your project.\nWhy? The project's complexity, required skills, and timeline all affect recommendations. Please describe your project's goal, main tasks, and any specific requirements. For example: "Building a mobile app for e-commerce" or "Writing technical blog posts."`;
+    case 'skills':
+      return `To recommend the most relevant skills, I need to know about your project or the type of freelancer you need.\nWhy? The nature of the work determines the required skills. Please describe the project or tasks. For example: "Developing a React web app" or "Designing a logo for a startup."`;
+    case 'budget':
+      return `To suggest a realistic budget, I need to know the project's scope and requirements.\nWhy? The complexity, required skills, and timeline all impact the budget. Please describe your project, and I'll recommend a budget range.`;
+    default:
+      return `To help you best, please provide more details about ${field}.`;
+  }
+}
+
+// Add a helper to start a new Q&A session after summary
+function getQAPromptForFlow(flowType: string): string {
+  switch (flowType) {
+    case 'AUTO JOB POST':
+    case 'CREATE A JOB POST':
+      return `Let's gather the information needed to create a job post on Mercy Shop. I'll ask you questions, and you provide the answers, keeping in mind we're crafting this specifically for Mercy Shop's workflow.\nHere we go:`;
+    case 'AUTO RECOMMEND CANDIDATE':
+      return `Let's find the best candidate for your needs. I'll ask you a few questions to tailor the recommendation.`;
+    case 'ADVISE ON THE JOB PLAN AND BUDGET':
+      return `Let's work out a budget and plan for your project. I'll ask you a few questions to get started.`;
+    case 'ANALYZE SKILLS':
+      return `Let's analyze the expected set of skills. I'll ask you a few questions to understand your needs.`;
+    default:
+      return `Let's get started. I'll ask you a few questions to help you achieve your goal.`;
+  }
+}
+
 const AIMePage: React.FC = () => {
   const { profile, loading: profileLoading } = useUserProfile();
   const userName = profile && profile.full_name ? profile.full_name.split(' ')[0] : 'there';
@@ -115,6 +174,58 @@ const AIMePage: React.FC = () => {
   const [autoPostReady, setAutoPostReady] = useState(false);
   const [awaitingJobPostConfirm, setAwaitingJobPostConfirm] = useState(false);
   const [pendingJobPost, setPendingJobPost] = useState(null);
+  // Add a new state to track if we are in an AI-driven flow
+  const [aiFlowActive, setAiFlowActive] = useState(false);
+  const [aiFlowStep, setAiFlowStep] = useState(0);
+  const [aiFlowAnswers, setAiFlowAnswers] = useState<string[]>([]);
+  const [aiFlowType, setAiFlowType] = useState<string | null>(null);
+  const [aiFlowSummary, setAiFlowSummary] = useState<string | null>(null);
+  const requiredFieldsByFlow: Record<string, string[]> = {
+    'AUTO JOB POST': ['title', 'description', 'skills', 'budget', 'deadline', 'experience'],
+    'CREATE A JOB POST': ['title', 'description', 'skills', 'budget', 'deadline', 'experience'],
+    'AUTO RECOMMEND CANDIDATE': ['title', 'skills', 'experience'],
+    'ADVISE ON THE JOB PLAN AND BUDGET': ['description', 'budget', 'deadline'],
+    'ANALYZE SKILLS': ['skills'],
+  };
+  const fieldQuestions: Record<string, string> = {
+    title: 'What is the job title?',
+    description: 'Please provide a job description.',
+    skills: 'What skills are required? (comma separated)',
+    budget: 'What is your budget for this job?',
+    deadline: 'What is the deadline for this job?',
+    experience: 'What is the required experience level (e.g., Beginner, Mid, Expert)?',
+  };
+  const isMissingOrUnclear = (field: string, value: string) => {
+    if (!value) return true;
+    if (/to be specified|unknown|n\/a|not sure|tbd|none|empty|random|example|sample|test|\(to be confirmed by client\)/i.test(value)) return true;
+    if (field === 'budget' && !/\d/.test(value)) return true;
+    if (field === 'deadline' && !/\d{4}|\d{2}[\/\-]\d{2}[\/\-]\d{2,4}/.test(value)) return true;
+    return false;
+  };
+  const [clarificationField, setClarificationField] = useState<string | null>(null);
+  const [clarificationAnswers, setClarificationAnswers] = useState<{[k:string]: string}>({});
+  // Add state for post-confirmation/edit
+  const [awaitingConfirmation, setAwaitingConfirmation] = useState(false);
+  const [editField, setEditField] = useState<string | null>(null);
+  // Add state for resume help
+  const [resumeDraft, setResumeDraft] = useState<string | null>(null);
+  const [resumeEditSection, setResumeEditSection] = useState<string | null>(null);
+
+  // Helper to ask AI a question and get a response
+  const askAI = async (prompt: string) => {
+    try {
+      const response = await fetch('/api/rag/ask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt }),
+      });
+      if (!response.ok) throw new Error('AI error');
+      const data = await response.json();
+      return data?.response || 'Sorry, I could not generate a response.';
+    } catch (err) {
+      return 'Failed to get a response from AI.';
+    }
+  };
 
   const handleExpandToggle = (idx: number) => {
     setExpandedIndexes((prev) =>
@@ -159,111 +270,268 @@ const AIMePage: React.FC = () => {
     localStorage.setItem('ai_me_conversation', JSON.stringify(aiMessages));
   }, [aiMessages]);
 
-  const handleSuggestion = (text: string) => {
+  // Modified handleSuggestion for AI-driven flow
+  const handleSuggestion = async (text: string) => {
     setChatInput('');
     setShowWelcome(false);
     if (specialFlows[text]) {
-      setFlow(text);
-      setFlowStep(0);
-      setFlowAnswers([]);
+      setAiFlowActive(true);
+      setAiFlowStep(0);
+      setAiFlowAnswers([]);
+      setAiFlowType(text);
+      setAiFlowSummary(null);
       setAiMessages(prev => [...prev, { role: 'ai', text: specialFlows[text][0].question }]);
+      setChatLoading(true);
+      // Immediately ask AI the first question
+      const aiResponse = await askAI(specialFlows[text][0].question);
+      setAiMessages(prev => [...prev, { role: 'ai', text: aiResponse }]);
+      setChatLoading(false);
+    } else if (text === 'Resume Help' && profile?.type === 'freelancer') {
+      // Build resume from profile fields
+      let missingFields = [];
+      const resumeSections = [];
+      if (profile.full_name) {
+        resumeSections.push(`Name: ${profile.full_name}`);
+      } else {
+        missingFields.push('full_name');
+      }
+      if (profile.email) {
+        resumeSections.push(`Email: ${profile.email}`);
+      } else {
+        missingFields.push('email');
+      }
+      if (profile.phone) {
+        resumeSections.push(`Phone: ${profile.phone}`);
+      } else {
+        missingFields.push('phone');
+      }
+      if (profile.bio) {
+        resumeSections.push(`Summary: ${profile.bio}`);
+      } else {
+        missingFields.push('bio');
+      }
+      if (profile.skills && profile.skills.length > 0) {
+        resumeSections.push(`Skills: ${Array.isArray(profile.skills) ? profile.skills.join(', ') : profile.skills}`);
+      } else {
+        missingFields.push('skills');
+      }
+      if (profile.experience) {
+        resumeSections.push(`Experience: ${profile.experience}`);
+      } else {
+        missingFields.push('experience');
+      }
+      if (profile.projects) {
+        resumeSections.push(`Projects: ${profile.projects}`);
+      } else {
+        missingFields.push('projects');
+      }
+      if (profile.education) {
+        resumeSections.push(`Education: ${profile.education}`);
+      } else {
+        missingFields.push('education');
+      }
+      if (profile.portfolio_url) {
+        resumeSections.push(`Portfolio: ${profile.portfolio_url}`);
+      } else {
+        missingFields.push('portfolio_url');
+      }
+      const resume = resumeSections.join('\n');
+      setResumeDraft(resume);
+      let aiMsgs = [
+        ...aiMessages,
+        { role: 'ai', text: resume }
+      ];
+      if (missingFields.length > 0) {
+        aiMsgs.push({ role: 'ai', text: `Please provide the following missing information to complete your resume: ${missingFields.join(', ')}` });
+        setResumeEditSection('pending');
+      } else {
+        aiMsgs.push({ role: 'ai', text: 'Your resume is complete! Would you like to edit any section? (summary, skills, experience, projects, education, portfolio) Type the section name or "no" to finish.' });
+        setResumeEditSection('pending');
+      }
+      setAiMessages(aiMsgs);
+      return;
     } else {
       setChatInput(text);
     }
   };
 
+  // Modified Q&A flow for AI-driven flows
   const handleChatSend = async () => {
-    if (flow) {
-      // Handle special flow Q&A
-      const currentFlow = specialFlows[flow];
+    if (aiFlowActive && aiFlowType && specialFlows[aiFlowType]) {
+      const currentFlow = specialFlows[aiFlowType];
       const answer = chatInput.trim();
       if (!answer) return;
       setAiMessages(prev => [...prev, { role: 'user', text: answer }]);
-      const nextStep = flowStep + 1;
-      const newAnswers = [...flowAnswers, answer];
-      setFlowAnswers(newAnswers);
-      setChatInput('');
-
-      // Skills step (index 2)
-      if (flow && (flow === 'AUTO JOB POST' || flow === 'CREATE A JOB POST')) {
-        const currentFlow = specialFlows[flow];
-        const answer = chatInput.trim();
-        if (!answer) {
-          setAiMessages(prev => [...prev, { role: 'ai', text: `If you don't know the skills, here are some suggestions: ${pendingSkills.length ? pendingSkills.join(', ') : skillSuggestions.slice(0, 5).join(', ')}. You can type any skills (comma separated), add more, or type 'done' when finished.` }]);
-          setChatInput('');
-          return;
-        }
-        if (nextStep === 3 && !skillsValidated) {
-          if (answer.toLowerCase() === "i don't know" || answer.toLowerCase() === 'idk') {
-            if (pendingSkills.length === 0) {
-              setPendingSkills(skillSuggestions.slice(0, 5));
-            }
-            setAiMessages(prev => [...prev, { role: 'ai', text: `No problem! Here are some suggestions: ${pendingSkills.length ? pendingSkills.join(', ') : skillSuggestions.slice(0, 5).join(', ')}. Please select at least one skill, type your own (comma separated), or type 'done' when finished.` }]);
-            setChatInput('');
-            return;
-          }
-          if (answer.toLowerCase() === 'done') {
-            if (pendingSkills.length === 0) {
-              setAiMessages(prev => [...prev, { role: 'ai', text: `Please select at least one skill, type your own (comma separated), or accept the recommended ones: ${skillSuggestions.slice(0, 5).join(', ')}` }]);
-              setChatInput('');
-              return;
-            }
-            setSkillsValidated(true);
-            setFlowStep(nextStep);
-            setFlowAnswers([...newAnswers.slice(0, 2), pendingSkills.join(', '), ...newAnswers.slice(3)]);
-            setAiMessages(prev => [...prev, { role: 'ai', text: 'Skills confirmed! Please continue.' }]);
-            setChatInput('');
-            return;
-          }
-          // Accept any skills typed (comma separated), filter out invalid ones
-          const newSkills = answer.split(',').map(s => s.trim()).filter(Boolean).filter(s => !/i don'?t know|done|n\/a|unknown/i.test(s));
-          if (newSkills.length === 0) {
-            setAiMessages(prev => [...prev, { role: 'ai', text: `Please type at least one valid skill, or type 'done' to finish.` }]);
-            setChatInput('');
-            return;
-          }
-          setPendingSkills([...pendingSkills, ...newSkills.filter(s => !pendingSkills.includes(s))]);
-          setAiMessages(prev => [...prev, { role: 'ai', text: `Added: ${newSkills.join(', ')}. Add more skills, or type 'done' when finished.` }]);
-          setChatInput('');
-          return;
-        }
-        // If user is validating skills
-        if (nextStep === 3 && !skillsValidated && pendingSkills.length > 0) {
-          if (answer.toLowerCase() === 'done') {
-            setSkillsValidated(true);
-            setFlowStep(nextStep);
-            setFlowAnswers([...newAnswers.slice(0, 2), pendingSkills.join(', '), ...newAnswers.slice(3)]);
-            setAiMessages(prev => [...prev, { role: 'ai', text: 'Skills confirmed! Please continue.' }]);
-            return;
-          } else {
-            // Add skill if not already present
-            if (!pendingSkills.includes(answer)) {
-              setPendingSkills([...pendingSkills, answer]);
-              setAiMessages(prev => [...prev, { role: 'ai', text: `Added skill: ${answer}. Add more or type 'done' to finish.` }]);
-            } else {
-              setAiMessages(prev => [...prev, { role: 'ai', text: `Skill already added. Add more or type 'done' to finish.` }]);
-            }
-            return;
-          }
-        }
-        // After all steps, show preview and ask for confirmation
-        if (nextStep >= currentFlow.length) {
-          setFlow(null);
-          setFlowStep(0);
-          setFlowAnswers([]);
-          setChatLoading(false);
-          // Compose job preview
-          const [title, description, skills, budget, deadline] = [newAnswers[0], newAnswers[1], Array.isArray(newAnswers[2]) ? newAnswers[2] : newAnswers[2]?.split(',').map(s => s.trim()), newAnswers[3], newAnswers[4]];
-          const level = inferJobLevel(description, skills);
-          setJobPreview({ title, description, skills, budget, deadline, level });
-          setAiMessages(prev => [...prev, { role: 'ai', text: `Here is your job post preview:\n**Job Title:** ${title}\n**Description:** ${description}\n**Skills:** ${skills.join(', ')}\n**Budget:** ${budget}\n**Deadline:** ${deadline}\n**Level:** ${level}\nType 'auto post' to post this job or 'edit' to change details.` }]);
-          setAutoPostReady(true);
-          return;
-        }
-        setFlowStep(nextStep);
-        setAiMessages(prev => [...prev, { role: 'ai', text: currentFlow[nextStep].question }]);
+      let newAnswers = [...aiFlowAnswers, answer];
+      const fields = requiredFieldsByFlow[aiFlowType] || [];
+      const currentField = fields[aiFlowStep];
+      // If the answer is a meta/clarification question, respond contextually
+      if (isMetaQuestion(answer)) {
+        setAiMessages(prev => [...prev, { role: 'ai', text: getContextExplanation(currentField) }]);
+        setChatLoading(false);
         return;
       }
+      // If current question is 'skills', suggest more and ask for confirmation
+      if (currentField === 'skills' && !skillsValidated) {
+        // Parse user skills
+        const userSkills = answer.split(',').map(s => s.trim()).filter(Boolean);
+        // Use previous description if available
+        const description = newAnswers[fields.indexOf('description')] || '';
+        const suggested = suggestSkills(description, userSkills);
+        // If suggestion adds new skills, ask user to confirm
+        if (suggested.length > userSkills.length) {
+          setPendingSkills(suggested);
+          setAiMessages(prev => [...prev, { role: 'ai', text: `Based on your description, I suggest also including: ${suggested.filter(s => !userSkills.includes(s)).join(', ')}.\nWould you like to add any of these? (Type skills to add, or 'done' to continue.)` }]);
+          setSkillsValidated(true);
+          setChatLoading(false);
+          return;
+        } else {
+          setPendingSkills(userSkills);
+          setSkillsValidated(true);
+        }
+      }
+      // If user is confirming skills
+      if (skillsValidated && currentField === 'skills') {
+        let confirmedSkills = pendingSkills;
+        if (answer.toLowerCase() !== 'done') {
+          const addSkills = answer.split(',').map(s => s.trim()).filter(Boolean);
+          confirmedSkills = Array.from(new Set([...pendingSkills, ...addSkills]));
+          setPendingSkills(confirmedSkills);
+          setAiMessages(prev => [...prev, { role: 'ai', text: `Added: ${addSkills.join(', ')}. Add more skills, or type 'done' when finished.` }]);
+          setChatLoading(false);
+          return;
+        }
+        // Replace skills answer in newAnswers
+        newAnswers[fields.indexOf('skills')] = confirmedSkills.join(', ');
+        setSkillsValidated(false);
+      }
+      // If current question is 'budget', suggest a range
+      if (currentField === 'budget' && !autoPostReady) {
+        const description = newAnswers[fields.indexOf('description')] || '';
+        const skills = (newAnswers[fields.indexOf('skills')] || '').split(',').map(s => s.trim()).filter(Boolean);
+        const budgetSuggestion = suggestBudget(description, skills);
+        setAiMessages(prev => [...prev, { role: 'ai', text: `A typical budget for this job might be: ${budgetSuggestion}.\nWould you like to use this, or enter your own?` }]);
+        setAutoPostReady(true);
+        setChatLoading(false);
+        return;
+      }
+      // If user is confirming budget
+      if (autoPostReady && currentField === 'budget') {
+        let budget = answer;
+        if (/\$\d+/.test(answer)) {
+          budget = answer;
+        } else {
+          // Use suggested
+          const description = newAnswers[fields.indexOf('description')] || '';
+          const skills = (newAnswers[fields.indexOf('skills')] || '').split(',').map(s => s.trim()).filter(Boolean);
+          budget = suggestBudget(description, skills);
+        }
+        newAnswers[fields.indexOf('budget')] = budget;
+        setAutoPostReady(false);
+      }
+      setAiFlowAnswers(newAnswers);
+      setChatInput('');
+      setChatLoading(true);
+      if (aiFlowStep + 1 < currentFlow.length) {
+        setAiFlowStep(aiFlowStep + 1);
+        setAiMessages(prev => [...prev, { role: 'ai', text: fieldQuestions[fields[aiFlowStep + 1]] }]);
+        setChatLoading(false);
+      } else {
+        // End of flow: check for missing fields before summary
+        const fields = requiredFieldsByFlow[aiFlowType] || [];
+        // Try to map answers to fields by order
+        const answerMap: {[k:string]: string} = {};
+        fields.forEach((f, i) => { answerMap[f] = newAnswers[i] || ''; });
+        // Merge in any clarification answers
+        Object.assign(answerMap, clarificationAnswers);
+        const missing = fields.filter(f => isMissingOrUnclear(f, answerMap[f]));
+        if (missing.length > 0) {
+          setClarificationField(missing[0]);
+          setAiMessages(prev => [...prev, { role: 'ai', text: fieldQuestions[missing[0]] }]);
+          setAiFlowActive(false); // Pause main flow for clarification
+          setChatLoading(false);
+          return;
+        }
+        // All fields present, concise summary and confirmation
+        setAiFlowActive(false);
+        setAiFlowStep(0);
+        setAiFlowType(null);
+        setClarificationField(null);
+        setClarificationAnswers({});
+        const summaryLines = fields.map(f => `**${f.charAt(0).toUpperCase() + f.slice(1)}:** ${answerMap[f]}`);
+        setAiMessages(prev => [
+          ...prev,
+          { role: 'ai', text: `Here’s your job post summary:\n${summaryLines.join('\n')}` },
+          { role: 'ai', text: 'Would you like to post this job? (yes/edit)' }
+        ]);
+        setAwaitingConfirmation(true);
+        setChatLoading(false);
+        return;
+      }
+      return;
+    }
+    // Handle confirmation/edit after summary
+    if (awaitingConfirmation) {
+      const input = chatInput.trim().toLowerCase();
+      if (input === 'yes' || input === 'y') {
+        setAiMessages(prev => [...prev, { role: 'ai', text: 'Job post confirmed and submitted! 🎉' }]);
+        setAwaitingConfirmation(false);
+        setAiFlowAnswers([]);
+        setChatInput('');
+        setChatLoading(false);
+        return;
+      } else if (input === 'edit') {
+        setAiMessages(prev => [...prev, { role: 'ai', text: `Which field would you like to edit? (${Object.keys(fieldQuestions).join(', ')})` }]);
+        setAwaitingConfirmation(false);
+        setEditField('pending');
+        setChatInput('');
+        setChatLoading(false);
+        return;
+      } else {
+        setAiMessages(prev => [...prev, { role: 'ai', text: 'Please type "yes" to confirm or "edit" to update a field.' }]);
+        setChatInput('');
+        setChatLoading(false);
+        return;
+      }
+    }
+    // Handle which field to edit
+    if (editField === 'pending') {
+      const field = chatInput.trim().toLowerCase();
+      if (Object.keys(fieldQuestions).includes(field)) {
+        setEditField(field);
+        setAiMessages(prev => [...prev, { role: 'ai', text: `Enter new value for ${field}:` }]);
+        setChatInput('');
+        setChatLoading(false);
+        return;
+      } else {
+        setAiMessages(prev => [...prev, { role: 'ai', text: `Please specify a valid field to edit: ${Object.keys(fieldQuestions).join(', ')}` }]);
+        setChatInput('');
+        setChatLoading(false);
+        return;
+      }
+    }
+    // Handle actual field edit
+    if (editField && editField !== 'pending') {
+      const newValue = chatInput.trim();
+      const fields = requiredFieldsByFlow[aiFlowType || flow] || [];
+      let updatedAnswers = [...aiFlowAnswers];
+      const idx = fields.indexOf(editField);
+      if (idx !== -1) updatedAnswers[idx] = newValue;
+      setAiFlowAnswers(updatedAnswers);
+      // Re-summarize
+      const answerMap: {[k:string]: string} = {};
+      fields.forEach((f, i) => { answerMap[f] = updatedAnswers[i] || ''; });
+      const summaryLines = fields.map(f => `**${f.charAt(0).toUpperCase() + f.slice(1)}:** ${answerMap[f]}`);
+      setAiMessages(prev => [
+        ...prev,
+        { role: 'ai', text: `Updated summary:\n${summaryLines.join('\n')}` },
+        { role: 'ai', text: 'Would you like to post this job? (yes/edit)' }
+      ]);
+      setEditField(null);
+      setAwaitingConfirmation(true);
+      setChatInput('');
+      setChatLoading(false);
+      return;
     }
     if (!chatInput.trim()) return;
     setAiMessages(prev => [...prev, { role: 'user', text: chatInput }]);
@@ -292,6 +560,61 @@ const AIMePage: React.FC = () => {
     setChatInput('');
     setChatLoading(false);
   };
+
+  // In handleChatSend, handle resume edit flow
+  if (resumeEditSection === 'pending') {
+    const section = chatInput.trim().toLowerCase();
+    if (["summary","skills","experience","projects","education","portfolio"].includes(section)) {
+      setResumeEditSection(section);
+      setAiMessages(prev => [...prev, { role: 'ai', text: `Enter new content for ${section}:` }]);
+      setChatInput('');
+      setChatLoading(false);
+      return;
+    } else if (section === 'no') {
+      setAiMessages(prev => [...prev, { role: 'ai', text: 'Resume finalized! Good luck!' }]);
+      setResumeEditSection(null);
+      setResumeDraft(null);
+      setChatInput('');
+      setChatLoading(false);
+      return;
+    } else {
+      setAiMessages(prev => [...prev, { role: 'ai', text: 'Please type a valid section name or "no" to finish.' }]);
+      setChatInput('');
+      setChatLoading(false);
+      return;
+    }
+  }
+  if (resumeEditSection && resumeEditSection !== 'pending') {
+    // Update the draft
+    let updated = resumeDraft || '';
+    const section = resumeEditSection;
+    const newContent = chatInput.trim();
+    const sectionMap = {
+      summary: 'Summary:',
+      skills: 'Skills:',
+      experience: 'Experience:',
+      projects: 'Projects:',
+      education: 'Education:',
+      portfolio: 'Portfolio:',
+    };
+    // Replace or add the section (plain format)
+    const regex = new RegExp(`${sectionMap[section]}.*?(?=(\n[A-Za-z]+:|$))`, 's');
+    if (regex.test(updated)) {
+      updated = updated.replace(regex, `${sectionMap[section]} ${newContent}\n`);
+    } else {
+      updated += `\n${sectionMap[section]} ${newContent}\n`;
+    }
+    setResumeDraft(updated);
+    setAiMessages(prev => [
+      ...prev,
+      { role: 'ai', text: updated },
+      { role: 'ai', text: 'Edit another section? (summary, skills, experience, projects, education, portfolio) or type "no" to finish.' }
+    ]);
+    setResumeEditSection('pending');
+    setChatInput('');
+    setChatLoading(false);
+    return;
+  }
 
   const handleRegenerate = async () => {
     if (!aiMessages.length) return;
@@ -440,6 +763,31 @@ const AIMePage: React.FC = () => {
     return;
   }
 
+  // In handleChatSend, if resumeEditSection === 'pending' and missing fields, update profile and resume accordingly
+  if (resumeEditSection === 'pending' && resumeDraft) {
+    // Find the first missing field
+    const missingFields = [];
+    if (!profile.full_name) missingFields.push('full_name');
+    if (!profile.email) missingFields.push('email');
+    if (!profile.phone) missingFields.push('phone');
+    if (!profile.bio) missingFields.push('bio');
+    if (!profile.skills || profile.skills.length === 0) missingFields.push('skills');
+    if (!profile.experience) missingFields.push('experience');
+    if (!profile.projects) missingFields.push('projects');
+    if (!profile.education) missingFields.push('education');
+    if (!profile.portfolio_url) missingFields.push('portfolio_url');
+    if (missingFields.length > 0) {
+      const field = missingFields[0];
+      // Save the user's input to the profile (simulate update)
+      profile[field] = chatInput.trim();
+      // Re-run the Resume Help logic to update the draft
+      handleSuggestion('Resume Help');
+      setChatInput('');
+      setChatLoading(false);
+      return;
+    }
+  }
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center" style={{ background: 'linear-gradient(135deg, #7b2ff2 0%, #f357a8 100%)' }}>
       <div className="w-full max-w-2xl mx-auto flex flex-col items-center justify-center flex-1 pt-24 pb-40">
@@ -460,7 +808,7 @@ const AIMePage: React.FC = () => {
             <div className="text-2xl text-white mb-6 text-center drop-shadow min-h-[60px] whitespace-pre-line animate-pulse">{typingText}</div>
           ) : (
             <div className="flex flex-wrap gap-3 justify-center mb-6">
-              {suggestionButtons.map((text) => (
+              {(profile?.type === 'client' ? clientSuggestions : freelancerSuggestions).map((text) => (
                 <button
                   key={text}
                   className="bg-white/10 text-white px-4 py-2 rounded-full hover:bg-white/20 border border-white/20 transition"

@@ -9,7 +9,7 @@ const AIAssistantWidget: React.FC = () => {
       onClick={() => navigate('/ai-me')}
       aria-label="Open AI Assistant"
     >
-      🤖 AI Assistant
+      🤖 AI ME
     </button>
   );
 };
