@@ -1,92 +1,71 @@
-# AFRIWORK
+# Kenwork: Everyone Deserve Chance
 
-🚀 **AFRIWORK** is a modern, full-stack freelancer marketplace platform built with React, TypeScript, and Supabase. It empowers clients to post projects, discover top freelancers, and manage collaborations—all in a beautiful, intuitive interface.
+Welcome to **Kenwork** – a next-generation freelancing platform designed to seamlessly connect clients with top freelancers using smart matching and AI-powered assistance.
 
----
+## 🚀 Project Overview
 
-## 🌟 Project Overview
+Kenwork is more than just a job board. It's an intelligent ecosystem where clients post projects, freelancers showcase their skills, and our platform leverages machine learning to recommend the best matches. Whether you're hiring or seeking work, Kenwork streamlines the process with automation, insights, and a delightful user experience.
 
-AFRIWORK bridges the gap between talented freelancers and clients seeking quality work. With real-time matching, secure authentication, and a seamless dashboard experience, it's the next-gen platform for remote work and digital collaboration.
+## 🎥 Demo Video
 
----
+[Watch Kenwork in Action](https://youtu.be/6CsXsyWvifE)
 
-## ✨ Key Features
+## 🖼️ Screenshots
 
-- **Client & Freelancer Dashboards**: Personalized dashboards for both user types, with live stats and actionable insights.
-- **Project Posting**: Clients can easily post new jobs, set budgets, and specify required skills.
-- **Freelancer Discovery**: Advanced search and filtering to find the perfect freelancer for any project.
-- **One-Click Applications**: Freelancers can apply to jobs instantly, with applications tracked in real time.
-- **Secure Auth & Profiles**: Supabase-powered authentication and profile management.
-- **Live Data**: All dashboards and lists update with real data from Supabase—no more static content!
-- **Modern UI/UX**: Built with React, Tailwind CSS, and a suite of custom UI components for a delightful user experience.
+![Home Page](![alt text](image.png))
+![Messages](![alt text](image-1.png))
+![AiME](![alt text](image-2.png))
 
----
+## 📊 Pitch Deck
 
-## 🛠️ Tech Stack
+[View Kenwork  Canva Pitch](https://www.canva.com/design/DAGmfvEj2as/PENCd41-7pURmqGNo7SK1Q/edit?utm_content=DAGmfvEj2as&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton)
 
-- **Frontend**: React, TypeScript, Vite, Tailwind CSS
-- **Backend**: Supabase (Postgres, Auth, RLS)
-- **State & Data**: React Context, Custom Hooks, Supabase Client
-- **UI Components**: Custom, accessible, and beautiful
+## SDG
+SDG 8: Decent Work and Economic Growth
+SDG 10: Reduced Inequalities
 
----
+## ✨ Features
 
-## 🚀 Getting Started
+- **AI Job Post Helper:** Create polished job posts via interactive Q&A, with AI summarization and skill suggestions.
+- **Smart Freelancer Matching:** Machine learning algorithms calculate compatibility scores based on skills, budget, experience, and ratings.
+- **Market Rate Insights:** Get budget recommendations and market rate analytics for your project.
+- **Freelancer Dashboard:** Manage applications, update skills, and track your job matches.
+- **Client Messaging:** Integrated chat and application management for smooth communication.
+- **Resume Builder:** Freelancers can auto-generate and edit resumes with AI assistance.
+- **Project Portfolio:** Freelancers showcase completed projects for credibility.
+- **Skill Analysis:** AI suggests and validates skills based on project descriptions.
 
-1. **Clone the repo:**
-   ```bash
-   git clone https://github.com/Wizard-hash2/AI_Background_Bot.git
-   cd afriwork
-   ```
-2. **Install dependencies:**
-   ```bash
-   npm install
-   # or
-   yarn install
-   ```
-3. **Configure Supabase:**
-   - Copy `.env.example` to `.env` and add your Supabase credentials.
-   - Set up your Supabase project and run the provided SQL migrations for tables and RLS policies.
-4. **Run the app:**
-   ```bash
-   npm run dev
-   # or
-   yarn dev
-   ```
-5. **Open in your browser:**
-   - Visit [http://localhost:5173](http://localhost:5173) (or the port shown in your terminal)
+## 🧠 Machine Learning Terminologies
 
----
+- **Compatibility Score:** A weighted metric combining skill match (40%), budget fit (30%), experience level (20%), and freelancer rating (10%).
+- **Skill Inference:** NLP techniques extract and suggest relevant skills from job descriptions.
+- **Budget Prediction:** Regression models and prompt-based AI estimate market rates for projects.
+- **Candidate Recommendation:** Ranking algorithms sort freelancers by predicted success for each job.
 
-## 🧩 Project Structure
+## 🛠️ Technologies Used
 
-- `src/pages/` — Main app pages (Dashboards, Find Freelancers, Post Job, etc.)
-- `src/components/` — Reusable UI components
-- `src/services/` — Supabase data services
-- `src/hooks/` — Custom React hooks for data fetching
-- `src/context/` — Global state and user profile context
-- `src/integrations/supabase/` — Supabase client and types
+- **Frontend:** React, TypeScript, Vite, Tailwind CSS
+- **Backend:** Supabase (Postgres, Auth, Storage), Node.js, Express
+- **AI/ML:** Google Gemini API (Generative Language), Custom ML matching service, Hugging Face, Open router, Google ai studio
+- **State Management:** React Context API
+- **Deployment:** Render (Fullstack hosting), Supabase cloud
+- **Other:** Axios, Lucide Icons, React Markdown
 
----
+## 🚚 Deployment Details
 
-## 🤝 Contributing
+Kenwork is deployed on [Render](https://kenwork.onrender.com/):
 
-We welcome contributions! Whether it's a bug fix, feature suggestion, or UI improvement, your input makes AFRIWORK better for everyone.
+- **Frontend:** Static site hosted via Render Web Service
+- **Backend:** Node.js API deployed as a Render Web Service
+- **Database:** Supabase cloud instance, connected via environment variables
+- **AI Integration:** Google Gemini API, Custom ML matching service, Hugging Face, Open router, Google ai studi keys managed securely via Render environment settings
 
-- Fork the repo
-- Create a feature branch
-- Submit a pull request
+## 📄 License
 
-Let's build the future of freelance work—together!
+Copyright © 2025 Aron. All rights reserved.
 
----
+This project is proprietary and may not be copied, modified, distributed, or used without explicit written permission from the author.
 
-## 📣 Contact & Community
+Ready to revolutionize your freelance experience?  
 
-- [Issues & Discussions](https://github.com/Wizard-hash2/AI_Background_Bot.git::)
-- [Supabase Docs](https://supabase.com/docs)
-- [React Docs](https://react.dev/)
-
----
-
-> **AFRIWORK** — Where talent meets opportunity. ✨
+**Kenwork: Pro-Connect Forge** – Everyon deserves chance!
